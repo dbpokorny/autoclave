@@ -1,3 +1,19 @@
+
+- [autoclave.js (fictional / speculative)](#autoclavejs-fictional--speculative)
+- [trusted and semi-trusted code](#trusted-and-semi-trusted-code)
+    - [Example](#example)
+  - [arrays](#arrays)
+  - [built-in properties](#built-in-properties)
+  - [instrumenting library functions](#instrumenting-library-functions)
+  - [adding the URL to member names](#adding-the-url-to-member-names)
+  - [library reference](#library-reference)
+      - [`ACexportProperty(subject, foreignURL, property)`](#acexportpropertysubject-foreignurl-property)
+      - [`ACexportProperties(subject, foreignURL, properties)`](#acexportpropertiessubject-foreignurl-properties)
+      - [`ACcanExportProperty(subject, foreignURL, property)`](#accanexportpropertysubject-foreignurl-property)
+      - [`ACcanExportProperties(subject, foreignURL, properties)`](#accanexportpropertiessubject-foreignurl-properties)
+      - [`ACimportProperty(subject, foreignURL, property)`](#acimportpropertysubject-foreignurl-property)
+      - [`ACimportProperties(subject, foreignURL, properties)`](#acimportpropertiessubject-foreignurl-properties)
+
 # autoclave.js (fictional / speculative)
 
 Autoclave is an alternative way to execute a sublanguage of JavaScript. It is
