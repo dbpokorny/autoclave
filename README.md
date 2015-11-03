@@ -1,4 +1,4 @@
-# autoclave.js
+# autoclave.js (fictional / speculative)
 
 Autoclave is an alternative way to execute a sublanguage of JavaScript. It
 consists of a scanner, a parser, some static analysis, and some static
