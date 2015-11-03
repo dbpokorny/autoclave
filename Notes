@@ -1,0 +1,2 @@
+1. The scanner / lexer converts "-1" to a number token, so "(x - 1)" is a valid
+expression but "(x-1)" is not

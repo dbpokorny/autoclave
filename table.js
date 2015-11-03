@@ -676,13 +676,13 @@ var GVrulesAndReducers = [
         function (PVn,PV_,PVx) { return [PVn.MMchars,':',PVx]; },
     [LITF,'->',['NUMBER',':',X]],
         function (PVn,PV_,PVx) { return [PVn,':',PVx]; },
-        function (PVn,PV_,PVx) { return [PVn,PVx]; },
+        function (PVn,PV_,PVx) { return [PVx]; },
         function (PVn,PV_,PVx) { return [PVn,PVx]; },
         function (PVn,PV_,PVx) { return [PVn.MMchars,':',PVx]; },
         function (PVn,PV_,PVx) { return [PVn.MMchars,':',PVx]; },
     [LITF,'->',['STRING',':',X]],
         function (PVn,PV_,PVx) { return [PVn,':',PVx]; },
-        function (PVn,PV_,PVx) { return [PVn,PVx]; },
+        function (PVn,PV_,PVx) { return [PVx]; },
         function (PVn,PV_,PVx) { return [PVn,PVx]; },
         function (PVn,PV_,PVx) { return [PVn.MMchars,':',PVx]; },
         function (PVn,PV_,PVx) { return [FFhtmlEntities(PVn.MMchars),':',PVx]; },
@@ -1332,11 +1332,15 @@ var FFcomputeIndexSpan = function FFcomputeIndexSpan(PVarray) {
     return [LVmin, LVmax];
 };
 
+var DCsymbolError = -10;
+var DCinputError = -20;
+var DCactionError = -20;
+
 var FFformatInfo;
 // PVinput and PVinputData must be of same length
 // PVinput is an array of symbols
 // PVinputData is an array of tokens
-// returns -1 on error
+// returns object with result code MMrc
 var FFtestParse = function FFtestParse(PVinput, PVinputData) {
     var LVi = 0; // index into PVinput
     var LVstack = [0];
@@ -1355,9 +1359,11 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
         var LVsymbol = "";
         if (LVi < PVinput.length) {
             LVsymbol = PVinput[LVi];
-            // console.log("symbol " + LVsymbol);
             if (GVitemSetTrans[LVsymbol] == undefined) {
-                return -1;
+                return {
+                    MMrc : DCsymbolError,
+                    MMerror : "Unknown symbol: " + LVsymbol
+                };
             }
             var LVtrans = GVitemSetTrans[LVsymbol][LVstackTop];
             if (LVtrans != -1) {
@@ -1453,28 +1459,32 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
             if (LVgoto == -1) {
                 assert(GVisAcceptingState[LVstackTop]);
                 if (LVi != PVinput.length) {
-                    console.log("extra input at end of program");
-                    console.log(PVinputData[LVi]);
-                    return -1;
+                    return {
+                        MMrc : DCinputError,
+                        MMerror : "extra input at end of program"
+                    };
                 }
-                var LVresult = {};
-                LVresult.MMtree = LVtree;
-                LVresult.MMtokenTree = LVtokenTree;
-                LVresult.MMdata2 = LVdata2;
-                LVresult.MMdata3 = LVdata3;
-                LVresult.MMdata4 = LVdata4;
-                LVresult.MMdata5 = LVdata5;
-                // console.log("A");
-                return LVresult;
+                return {
+                    MMrc : 0,
+                    MMtree : LVtree,
+                    MMtokenTree : LVtokenTree,
+                    MMdata2 : LVdata2,
+                    MMdata3 : LVdata3,
+                    MMdata4 : LVdata4,
+                    MMdata5 : LVdata5
+                };
             } else {
                 LVstack.push(LVgoto);
                 continue;
             }
         }
-        console.log("Unknown action on line " + (LVlastToken.MMlineno + 1) + ", col " + (LVlastToken.MMcolno + 1));
-        process.stdout.write(FFformatInfo(util.format(LVtree)));
-        process.stdout.write('\n');
-        return -1;
+        return {
+            MMrc : DCactionError,
+            MMerror : ("Unknown action on line " +
+                    (LVlastToken.MMlineno + 1) + ", col " +
+                    (LVlastToken.MMcolno + 1)),
+            MMinfo : FFformatInfo(util.format(LVtree))
+        };
     }
 };
 
@@ -1487,7 +1497,6 @@ FFformatInfo = function FFformatInfo(PVstr) {
         return PVstr;
     }
 };
-
 
 var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
     var LVi = 0; // index into PVinput
@@ -1503,9 +1512,8 @@ var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
         var LVsymbol = "";
         if (LVi < PVinput.length) {
             LVsymbol = PVinput[LVi];
-            // console.log("symbol " + LVsymbol);
             if (GVitemSetTrans[LVsymbol] == undefined) {
-                return -1;
+                assert(false);
             }
             var LVtrans = GVitemSetTrans[LVsymbol][LVstackTop];
             if (LVtrans != -1) {
@@ -1563,11 +1571,12 @@ var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
             if (LVgoto == -1) {
                 assert(GVisAcceptingState[LVstackTop]);
                 assert(LVi == PVinput.length);
-                var LVresult = {};
-                LVresult.MMtree = LVtree;
-                LVresult.MMtokenTree = LVtokenTree;
-                LVresult.MMdata6 = LVdata6;
-                return LVresult;
+                return {
+                    MMrc : 0,
+                    MMtree : LVtree,
+                    MMtokenTree : LVtokenTree,
+                    MMdata6 : LVdata6
+                };
             } else {
                 LVstack.push(LVgoto);
                 continue;

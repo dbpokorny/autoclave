@@ -18,7 +18,7 @@
 //   2.6 identifier
 //
 
-assert = require("assert");
+var assert = require("assert");
 
 var DCwhitespace = 'DCwhitespace';
 var DCpunct = 'DCpunct';
@@ -93,17 +93,17 @@ GVpuncts["."] = 1;
 GVpuncts[","] = 1;
 GVpuncts[";"] = 1;
 
-GVpunctInitChars = {};
+var GVpunctInitChars = {};
 
-function FFmakepunctInitChars() {
+var FFmakePunctInitChars = function FFmakePunctInitChars() {
     Object.keys(GVpuncts).forEach(function (PVk) {
         GVpunctInitChars[PVk.slice(0,1)] = 1;
     });
-}
+};
 
-FFmakepunctInitChars();
+FFmakePunctInitChars();
 
-GVdigits = {};
+var GVdigits = {};
 GVdigits['0'] = 1;
 GVdigits['1'] = 1;
 GVdigits['2'] = 1;
@@ -115,7 +115,7 @@ GVdigits['7'] = 1;
 GVdigits['8'] = 1;
 GVdigits['9'] = 1;
 
-GVhexDigits = {};
+var GVhexDigits = {};
 GVhexDigits['a'] = 1;
 GVhexDigits['A'] = 1;
 GVhexDigits['b'] = 1;
@@ -129,15 +129,15 @@ GVhexDigits['E'] = 1;
 GVhexDigits['f'] = 1;
 GVhexDigits['F'] = 1;
 
-function FFmakeHexDigits() {
+var FFmakeHexDigits = function FFmakeHexDigits() {
     Object.keys(GVdigits).forEach(function (PVk) {
         GVhexDigits[PVk] = 1;
     });
-}
+};
 
 FFmakeHexDigits();
 
-GVletters = {};
+var GVletters = {};
 GVletters['a'] = 1;
 GVletters['b'] = 1;
 GVletters['c'] = 1;
@@ -212,6 +212,23 @@ GVkeywords['true'] = 1;
 GVkeywords['null'] = 1;
 
 GVkeywords['instanceof'] = 1;
+
+var GVinvalidIds = {};
+GVinvalidIds['assign'] = 1;
+GVinvalidIds['create'] = 1;
+GVinvalidIds['defineProperties'] = 1;
+GVinvalidIds['defineProperty'] = 1;
+GVinvalidIds['freeze'] = 1;
+GVinvalidIds['getNotifier'] = 1;
+GVinvalidIds['getOwnPropertyDescriptor'] = 1;
+GVinvalidIds['getOwnPropertySymbols'] = 1;
+GVinvalidIds['getPrototypeOf'] = 1;
+GVinvalidIds['__defineGetter__'] = 1;
+GVinvalidIds['__defineSetter__'] = 1;
+GVinvalidIds['__lookupGetter__'] = 1;
+GVinvalidIds['__lookupSetter__'] = 1;
+GVinvalidIds['constructor'] = 1;
+
 
 var GVstrEscapes = {};
 GVstrEscapes["n"] = "\n";
@@ -320,9 +337,10 @@ var DCpunctError = -10;
 var DCnumberError = -20;
 var DCscanError = -30;
 var DCstringError = -40;
+var DCinvalidIdError = -50;
 
 // returns { MMrc : result code, MMtokens : list of tokens }
-function FFmakeTokens(PVinput) {
+var FFmakeTokens = function FFmakeTokens(PVinput) {
     var LVi = 0;
     var LVtokens = [];
     var LVlineno = 0; // zero-based
@@ -355,11 +373,43 @@ function FFmakeTokens(PVinput) {
             LVtoken.MMlineno = LVlineno; LVtoken.MMcolno = LVcolno;
             LVtoken.MMlength = LVj; LVtoken.MMoffset = LVi;
             LVtoken.MMchars = PVinput.slice(LVi, LVi + LVj);
-                LVtokens.push(LVtoken); LVlineno += 1; LVcolno = 0; LVi
-                += LVj;
-            continue; // #main loop
+            LVtokens.push(LVtoken); LVlineno += 1; LVcolno = 0; LVi += LVj;
+            continue; // #mainloop
         }
 
+        // forward slash star multi-line comment
+        if (LVc == "/" && LVi + 1 < PVinput.length && PVinput[LVi + 1] == "*") {
+            var LVstartLineno = LVlineno;
+            var LVstartColno = LVcolno;
+            var LVj = 2;
+            LVcolno += 2;
+            while (true) {
+                if (LVi + LVj == PVinput.length) {
+                    break;
+                }
+                if (PVinput[LVi + LVj] == "*" &&
+                        LVi + LVj + 1 < PVinput.length &&
+                        PVinput[LVi + LVj + 1] == "/") {
+                    LVj += 2;
+                    LVcolno += 2;
+                    break;
+                }
+                if (PVinput[LVi + LVj] == '\n') {
+                    LVj += 1;
+                    LVlineno += 1;
+                    LVcolno = 0;
+                } else {
+                    LVj += 1;
+                    LVcolno += 1;
+                }
+            }
+            var LVtoken = {}; LVtoken.MMtype = DCcommentTypeCode;
+            LVtoken.MMlineno = LVstartLineno; LVtoken.MMcolno = LVstartColno;
+            LVtoken.MMlength = LVj; LVtoken.MMoffset = LVi;
+            LVtoken.MMchars = PVinput.slice(LVi, LVi + LVj);
+            LVtokens.push(LVtoken); LVi += LVj;
+            continue; // #mainloop
+        }
 
         // space or tab
         if (LVc == " " || LVc == "\t") {
@@ -367,15 +417,15 @@ function FFmakeTokens(PVinput) {
             LVtoken.MMlineno = LVlineno; LVtoken.MMcolno = LVcolno;
             LVtoken.MMlength = 1; LVtoken.MMoffset = LVi; LVtoken.MMchars = LVc;
             LVtokens.push(LVtoken); LVcolno += 1; LVi += 1;
-            continue; // #main loop
+            continue; // #mainloop
         }
 
         // newline
         if (LVc == "\n") {
-            var LVtoken = {}; LVtoken.MMtype = DCnewlineTypeCode; LVtoken.MMlineno
-                = LVlineno; LVtoken.MMcolno = LVcolno; LVtoken.MMlength = 1;
-            LVtoken.MMoffset = LVi; LVtoken.MMchars = LVc; LVtokens.push(LVtoken);
-            LVlineno += 1; LVcolno = 0; LVi += 1;
+            var LVtoken = {}; LVtoken.MMtype = DCnewlineTypeCode;
+            LVtoken.MMlineno = LVlineno; LVtoken.MMcolno = LVcolno;
+            LVtoken.MMlength = 1; LVtoken.MMoffset = LVi; LVtoken.MMchars = LVc;
+            LVtokens.push(LVtoken); LVlineno += 1; LVcolno = 0; LVi += 1;
             continue; // #mainloop
         }
 
@@ -385,8 +435,9 @@ function FFmakeTokens(PVinput) {
                 // punctuation
                 var LVtoken = {}; LVtoken.MMtype = DCpunctTypeCode;
                 LVtoken.MMlineno = LVlineno; LVtoken.MMcolno = LVcolno;
-                LVtoken.MMlength = 1; LVtoken.MMoffset = LVi; LVtoken.MMchars =
-                    LVc; LVtokens.push(LVtoken); LVcolno += 1; LVi += 1;
+                LVtoken.MMlength = 1; LVtoken.MMoffset = LVi;
+                LVtoken.MMchars = LVc; LVtokens.push(LVtoken); LVcolno += 1;
+                LVi += 1;
                 continue; // #mainloop
             }
             var LVd = PVinput[LVi + 1];
@@ -440,8 +491,7 @@ function FFmakeTokens(PVinput) {
                 LVj = LVlongestNumber;
                 // number
                 var LVtoken = {}; if (LVhaveDot) { LVtoken.MMtype =
-                    DCfloatTypeCode; } else { LVtoken.MMtype =
-                        DCintTypeCode; }
+                DCfloatTypeCode; } else { LVtoken.MMtype = DCintTypeCode; }
                 LVtoken.MMlineno = LVlineno; LVtoken.MMcolno = LVcolno;
                 LVtoken.MMlength = LVj; LVtoken.MMoffset = LVi;
                 LVtoken.MMchars = PVinput.slice(LVi,LVi+LVj);
@@ -571,7 +621,6 @@ function FFmakeTokens(PVinput) {
             var LVj = 1;
             var LVlongestIdkw = -1;
             while (true) { // # idkwloop
-                var LVidkwCand = PVinput.slice(LVi, LVi + LVj);
                 LVlongestIdkw = LVj;
                 if (LVi + LVj == PVinput.length) {
                     break; // # idkwloop
@@ -584,12 +633,21 @@ function FFmakeTokens(PVinput) {
                 break; // # idkwloop
             }
             LVj = LVlongestIdkw;
-            var LVtoken = {}; if (GVkeywords[PVinput.slice(LVi,LVi+LVj)] == 1) {
+            var LVidkwCand = PVinput.slice(LVi, LVi + LVj);
+            if (GVinvalidIds[LVidkwCand] == 1) {
+                var LVresult = {};
+                LVresult.MMrc = DCinvalidIdError;
+                LVresult.MMerror = "Invalid identifier: " + LVidkwCand;
+                LVresult.MMlineno = LVlineno;
+                LVresult.MMcolno = LVcolno;
+                return LVresult;
+            }
+            var LVtoken = {}; if (GVkeywords[LVidkwCand] == 1) {
                 LVtoken.MMtype = DCkeywordTypeCode; } else { LVtoken.MMtype =
                     DCidTypeCode; }
             LVtoken.MMlineno = LVlineno; LVtoken.MMcolno = LVcolno;
             LVtoken.MMlength = LVj; LVtoken.MMoffset = LVi;
-            LVtoken.MMchars = PVinput.slice(LVi, LVi + LVj);
+            LVtoken.MMchars = LVidkwCand;
             LVtokens.push(LVtoken); LVcolno += LVj; LVi += LVj;
             continue; // #mainloop
         }
@@ -606,6 +664,9 @@ function FFmakeTokens(PVinput) {
                     break; // #strloop (error)
                 }
                 var LVd = PVinput[LVi + LVj];
+                if (LVd == '\n') {
+                    break; // #strloop (error)
+                }
                 if (LVd == "'") {
                     LVj += 1;
                     LVlongestStr = LVj;
@@ -664,6 +725,9 @@ function FFmakeTokens(PVinput) {
                     break; // #strloop (error)
                 }
                 var LVd = PVinput[LVi + LVj];
+                if (LVd == '\n') {
+                    break; // #strloop (error)
+                }
                 if (LVd == '"') {
                     LVj += 1;
                     LVlongestStr = LVj;
@@ -718,15 +782,15 @@ function FFmakeTokens(PVinput) {
         LVresult.MMcolno = LVcolno;
         return LVresult;
     } // end #mainloop
-}
+};
 
-function FFtestScan(PVstr) {
+var FFtestScan = function FFtestScan(PVstr) {
     console.log("scan: " + PVstr);
     console.log(FFmakeTokens(PVstr));
     console.log("scan: " + PVstr);
-}
+};
 
-function FFtestToken() {
+var FFtestToken = function FFtestToken() {
     FFtestScan("a");
     FFtestScan("-0");
     FFtestScan("-1");
@@ -750,10 +814,19 @@ function FFtestToken() {
     FFtestScan('"x"');
     FFtestScan('"\\"');
     FFtestScan('"\\""');
-}
+};
+
+var FFtestStringScan = function FFtestStringScan() {
+    assert(FFmakeTokens('"').MMrc == DCstringError);
+    assert(FFmakeTokens('"foo').MMrc == DCstringError);
+    assert(FFmakeTokens('"foo\n').MMrc == DCstringError);
+    assert(FFmakeTokens('e.__defineGetter__').MMrc == DCinvalidIdError);
+};
+
+FFtestStringScan();
 
 // Return the corresponding symbol for a token
-function FFsymbolConvert(token) {
+var FFsymbolConvert = function FFsymbolConvert(token) {
     if (token.MMtype == DCintTypeCode || token.MMtype == DCfloatTypeCode) {
         return 'NUMBER';
     } else if (token.MMtype == DCidTypeCode) {
@@ -768,13 +841,14 @@ function FFsymbolConvert(token) {
     console.log("Could not translate token: ");
     console.log(token);
     assert(false);
-}
+};
 
 // remove whitespace tokens
-function FFtokSym(PVinput) {
+// return result object with MMrc status
+var FFtokSym = function FFtokSym(PVinput) {
     var LVtokensResult = FFmakeTokens(PVinput);
     if (LVtokensResult.MMrc != 0) {
-        return -1;
+        return LVtokensResult;
     }
     var LVinTokens = LVtokensResult.MMtokens;
     var LVi;
@@ -790,28 +864,33 @@ function FFtokSym(PVinput) {
         }
     }
     var LVresult = {};
+    LVresult.MMrc = 0;
     LVresult.MMsymbols = LVsymbols;
     LVresult.MMtokens = LVoutTokens;
     return LVresult;
-}
+};
 
 var RRfs = require("fs");
 
-function FFtest(PVfilename) {
+var FFtest = function FFtest(PVfilename) {
     RRfs.readFile(PVfilename, 'utf8', function (err, data) {
-        if (! err) {
-            var LVtokens = FFmakeTokens(data);
-            console.log(LVtokens);
+        if (err) {
+            console.log(err);
+            return;
         }
+        var LVtokens = FFmakeTokens(data);
+        console.log(LVtokens);
     });
-}
+};
 
-if (require.main === module) {
-    FFtest("./table.js");
+// Usage:
+//     node token.js [FILENAME]
+if (require.main === module && process.argv.length >= 3) {
+    FFtest(process.argv[2]);
 }
 
 module.exports = {
     "MMmakeTokens" : FFmakeTokens,
     "MMtestToken" : FFtestToken,
     "MMtokSym" : FFtokSym,
-}
+};

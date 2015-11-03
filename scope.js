@@ -10,28 +10,28 @@ var RRtable = require("./table.js");
 var FFformatTokenRef = RRtable.MMformatTokenRef;
 var assert = require("assert");
 
-function FFscopeParse(PVinput) {
+var FFscopeParse = function FFscopeParse(PVinput) {
     var LVtokSym = RRtoken.MMtokSym(PVinput);
-    if (LVtokSym == -1) {
-        console.log("MMtokSym failed");
-        return -1;
+    if (LVtokSym.MMrc != 0) {
+        return LVtokSym;
     }
     var LVsymbols = LVtokSym.MMsymbols;
     var LVtokens = LVtokSym.MMtokens;
     // console.log(LVsymbols);
     // console.log(LVtokens);
     var LVsyntax = RRtable.MMtestParse(LVsymbols, LVtokens);
-    if (LVsyntax == -1) {
-        return -1;
+    if (LVsyntax.MMrc != 0) {
+        return LVsyntax;
     }
     return {
+        MMrc : 0,
         MMsyntax : LVsyntax,
         MMtokens : LVtokens,
         MMsymbols : LVsymbols
     };
 };
 
-function FFdeepFlatten(PVx) {
+var FFdeepFlatten = function FFdeepFlatten(PVx) {
     var LVresult = [];
     var FFdfHelper = function FFdfHelper(PVn) {
         if (PVn instanceof Array) {
@@ -49,7 +49,7 @@ function FFdeepFlatten(PVx) {
     return LVresult;
 };
 
-function FFformatScope(PVtree) {
+var FFformatScope = function FFformatScope(PVtree) {
     var LVpreIndent = FFdeepFlatten(PVtree);
     var LVindented = [];
     var LVi;
@@ -76,9 +76,9 @@ function FFformatScope(PVtree) {
         }
     }
     return LVindented.join(" ");
-}
+};
 
-function FFformatHTML(PVtree) {
+var FFformatHTML = function FFformatHTML(PVtree) {
     var LVpreIndent = FFdeepFlatten(PVtree);
     var LVindented = [];
     var LVi;
@@ -105,7 +105,7 @@ function FFformatHTML(PVtree) {
         }
     }
     return LVindented.join(" ");
-}
+};
 
 // Use a hash "#" prefix for definitions in order to avoid confusion when
 // LVdefName == toString and so on
@@ -116,13 +116,13 @@ var FFwalkTree = function FFwalkTree(PVtree) {
     var LVscopeStack = [['undefined']];
     var LVdefStack = [{'#console':'global','#module':'global','#Array':'global',
         '#Math':'global','#Object':'global','#undefined':'global',
-        '#process':'global','#require':'global'}];
+        '#process':'global','#require':'global','#RegExp':'global'}];
     var LVtokenRefLinks = {};
     // compile a list of undefined variables
     var LVundef = [];
     var FFwalkHelper = function FFwalkHelper (PVexpr) {
         if (! (PVexpr instanceof Array)) {
-            LVstack[LVstack.length-1].push(PVexpr);
+            LVstack[LVstack.length - 1].push(PVexpr);
             return;
         }
         // update definitions
@@ -133,7 +133,7 @@ var FFwalkTree = function FFwalkTree(PVtree) {
             LVdefStack[LVdefStack.length - 1]['#' + LVdefName] = PVexpr[2];
         }
         var LVelt = [];
-        LVstack[LVstack.length-1].push(LVelt);
+        LVstack[LVstack.length - 1].push(LVelt);
         LVstack.push(LVelt);
         if (PVexpr.length == 0) {
             LVstack.pop();
@@ -180,7 +180,7 @@ var FFwalkTree = function FFwalkTree(PVtree) {
                     var LVatLoc = LVparam.indexOf('@');
                     assert(LVatLoc > 0);
                     var LVdefName = LVparam.slice(0,LVatLoc);
-                    LVdefStack[LVdefStack.length-1]['#' + LVdefName] = LVparam;
+                    LVdefStack[LVdefStack.length - 1]['#' + LVdefName] = LVparam;
                 }
                 LVparams = null;
             }
@@ -210,7 +210,13 @@ var FFwalkTree = function FFwalkTree(PVtree) {
 
 var RRfs = require('fs');
 
-function FFtest(PVfilename) {
+var FFrootFilename = function FFrootFilename(PVfilename) {
+    var LVdotIndex = PVfilename.indexOf('.');
+    assert(LVdotIndex > 0);
+    return PVfilename.slice(0,LVdotIndex);
+};
+
+var FFtest = function FFtest(PVfilename) {
     assert(typeof PVfilename == "string");
     RRfs.readFile(PVfilename, 'utf8', function (err, data) {
         if (err) {
@@ -218,8 +224,9 @@ function FFtest(PVfilename) {
             return;
         }
         var LVparse = FFscopeParse(data);
-        if (LVparse == -1) {
+        if (LVparse.MMrc != 0) {
             console.log("FFscopeParse failed");
+            console.log(LVparse);
             return;
         }
         var LVsyntax = LVparse.MMsyntax;
@@ -227,7 +234,7 @@ function FFtest(PVfilename) {
         var LVsymbols = LVparse.MMsymbols;
         console.log(data);
         console.log("# Scope data");
-        LVwalkResult = FFwalkTree(LVsyntax.MMdata3);
+        var LVwalkResult = FFwalkTree(LVsyntax.MMdata3);
         var LVscopeTree = LVwalkResult.MMscopeTree;
         console.log(FFformatScope(LVscopeTree));
         if (LVwalkResult.MMundef.length > 0 ) {
@@ -251,8 +258,9 @@ function FFtest(PVfilename) {
 
         // Generate HTML
         var LVparse2 = RRtable.MMtestParse2(LVsymbols, LVtokens);
+        assert(LVparse2.MMrc == 0);
         var LVhtml = FFformatHTML(LVparse2.MMdata6);
-        console.log(LVhtml);
+        // console.log(LVhtml);
         var LVheader = ('<html><head>' +
                 '<style>' +
                 '.hiFunction {color:#40ffff;}' +
@@ -260,14 +268,18 @@ function FFtest(PVfilename) {
                 '.hiStatement {color:#ffff60;}' +
                 '.hiRepeat {color:#ffff60;}' +
                 '</style></head>' +
-                '<body style="background-color: black; color: white; font-family:Courier; font-size:14px;">');
+                '<body style="background-color: black; ' +
+                'color: white; ' +
+                'font-family:Courier; ' +
+                'font-size:14px;">');
         var LVfooter = '</body></html>';
-        RRfs.writeFile('draft2.html',LVheader + LVhtml + LVfooter);
+        var LVoutFilename = 'build/' + FFrootFilename(PVfilename) + '.html';
+        RRfs.writeFile(LVoutFilename,LVheader + LVhtml + LVfooter);
     });
 };
 
-if (require.main === module) {
-    FFtest("./table.js");
+if (require.main === module && process.argv.length >= 3) {
+    FFtest(process.argv[2]);
 }
 
 module.exports = {

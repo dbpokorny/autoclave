@@ -2,11 +2,10 @@ var RRtoken = require("./token.js");
 var RRtable = require("./table.js");
 var assert = require("assert");
 
-function FFtree(PVinput) {
+var FFtree = function FFtree(PVinput) {
     var LVtokSym = RRtoken.MMtokSym(PVinput);
-    if (LVtokSym == -1) {
-        console.log("MMtokSym failed");
-        return -1;
+    if (LVtokSym.MMrc != 0) {
+        return LVtokSym;
     }
     var LVsymbols = LVtokSym.MMsymbols;
     var LVtokens = LVtokSym.MMtokens;
@@ -15,14 +14,19 @@ function FFtree(PVinput) {
     assert(LVtokens != undefined);
     // console.log(LVtokens);
     var LVsyntax = RRtable.MMtestParse(LVsymbols, LVtokens);
-    if (LVsyntax == -1) {
-        return -1;
+    if (LVsyntax.MMrc != 0) {
+        return LVsyntax;
     }
     return LVsyntax;
 };
 
-function FFassertTreeDigest(PVsrc,PVexpected) {
-    var LVactual = FFtree(PVsrc).MMtree + "";
+var FFassertTreeDigest = function FFassertTreeDigest(PVsrc,PVexpected) {
+    var LVtree = FFtree(PVsrc);
+    if (LVtree.MMrc != 0) {
+        console.log("FFtree failed");
+        assert(false);
+    }
+    var LVactual = LVtree.MMtree + "";
     if (LVactual != PVexpected) {
         console.log("Unexpected source code digest");
         console.log(PVsrc);
@@ -32,7 +36,7 @@ function FFassertTreeDigest(PVsrc,PVexpected) {
     }
 };
 
-function FFtestTreeVar() {
+var FFtestTreeVar = function FFtestTreeVar() {
     FFassertTreeDigest("var x;","var,x");
     FFassertTreeDigest("var x = 10;","var,x,=,10");
     FFassertTreeDigest("var x = '';","var,x,=,''");
@@ -57,9 +61,7 @@ FFtestTreeVar();
 
 var RRfs = require('fs');
 
-// FFtree(src).MMdata3.toString().replace(/,/g," ")
-
-function FFdeepFlatten(PVx) {
+var FFdeepFlatten = function FFdeepFlatten(PVx) {
     var LVresult = [];
     var FFdfHelper = function FFdfHelper(PVn) {
         if (PVn instanceof Array) {
@@ -75,7 +77,7 @@ function FFdeepFlatten(PVx) {
     return LVresult;
 };
 
-function FFformatDraft(PVdraftTree) {
+var FFformatDraft = function FFformatDraft(PVdraftTree) {
     var LVpreIndent = FFdeepFlatten(PVdraftTree);
     var LVindented = [];
     var LVi;
@@ -103,25 +105,29 @@ function FFformatDraft(PVdraftTree) {
     return LVindented.join(" ");
 };
 
-function FFtest(PVfilename) {
+var FFtest = function FFtest(PVfilename) {
     RRfs.readFile(PVfilename, 'utf8', function (err, data) {
-        if (! err) {
-            var LVtree = FFtree(data);
-            if (LVtree != -1) {
-                console.log(data);
-                console.log("# Member data");
-                var LVmember = LVtree.MMdata4.toString().replace(RegExp(",","g")," ");
-                console.log(LVmember);
-                console.log("# Draft data");
-                var LVdraft = FFformatDraft(LVtree.MMdata5);
-                console.log(LVdraft);
-            }
+        if (err) {
+            console.log(err);
+            return;
         }
+        var LVtree = FFtree(data);
+        if (LVtree.MMrc != 0) {
+            console.log(LVtree);
+            return;
+        }
+        console.log(data);
+        console.log("# Member data");
+        var LVmember = LVtree.MMdata4.toString().replace(RegExp(",","g")," ");
+        console.log(LVmember);
+        console.log("# Draft data");
+        var LVdraft = FFformatDraft(LVtree.MMdata5);
+        console.log(LVdraft);
     });
 };
 
-if (require.main === module) {
-    FFtest("./table.js");
+if (require.main === module && process.argv.length >= 3) {
+    FFtest(process.argv[2]);
 }
 
 module.exports = {
