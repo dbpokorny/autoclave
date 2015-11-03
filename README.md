@@ -31,9 +31,9 @@ transformation:
 From the point of view of the code that executes within this "jail", nothing has
 changed, aside from being restricted to a subset of JavaScript / ECMAScript.
 
-## `ACexportProperty(subject,foreignURL,property)`
+### `ACexportProperty(subject,foreignURL,property)`
 
-## `ACexportProperties(subject,foreignURL,propertyList)`
+### `ACexportProperties(subject,foreignURL,propertyList)`
 
 These library functions take an arbitrary argument for `subject`, a string such as
 "$ssh://git@github.com/ghuser/ghrepo" (that is to say: a dollar sign followed by a
@@ -79,9 +79,9 @@ The caller only passes the last three of the four parameters. The remaining
 parameter, `hostURL`, gains its value through a static code transformation that
 inserts a string representing the git URL of the host.
 
-## `ACimportProperty(subject, foreignURL, property)`
+### `ACimportProperty(subject, foreignURL, property)`
 
-## `ACimportProperties(subject, foreignURL, properties)`
+### `ACimportProperties(subject, foreignURL, properties)`
 
 The library functions  and operates in the inverse manner by reading the value of
 a property for an object that has been made available. The function requires read
