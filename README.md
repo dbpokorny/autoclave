@@ -1,20 +1,62 @@
 # autoclave.js
 
-There is one big idea in autoclave: source code is considered to be a sublanguage
-of JavaScript / ECMAScript and executes as it normally would, in either a browser
-client or node server process, with one exception: all code (outside system
-library functions described below) executes as the agent of a *repository*, the
-*origin* of the executing code (identified by URL).
+Autoclave is an alternative way to execute a sublanguage of JavaScript. It
+consists of a scanner, a parser, some static analysis, and some static
+transformations.
 
-This code only has access to properties P of *any* object X such that P ends with
-"$" followed by origin's URL, for example "$ssh://git@github.com/ghuser/ghrepo"
-for a particular user "ghuser" who has a repository named "ghrepo". There are
-exceptions for numbers and for dealing with ordinary objects like arrays such as
-`forEach`, `length`, `keys`, ...
+The proposed technology is orthogonal to and compatible with the iframe sandbox
+that manages the interaction of code from different domains in HTML5. On the
+server, autoclave isolates the activity of programs from multiple semi-trusted
+sources.
 
-When the supervising program receives source code from a given URL, it applies a
-static code transformation that, among other things, applies the following
-transformation:
+All code (outside system library functions described below) executes as the agent
+of a git *repository*, the *origin*, identified by git URL.
+
+Code from a given repository only has access to those properties that end with "$"
+followed by the git URL of the repository. This creates a private namespace of
+members per URL. From the point of view of code, member access operations are
+rewritten by a code transformation to satisfy this constraint.
+
+For example code originating from "ssh://git@github.com/ghuser/ghrepo" that wishes
+to access the member "scopeTree" of object "x" would be compiled to
+`x["scopeTree$ssh://git@github.com/ghuser/ghrepo"]`.
+
+## arrays
+
+There is an exception for numbers: code like `x[(...) | 0]` is allowed in spite of
+the rule above because the compiler knows `(...) | 0` is always an int and not
+subject to the URL transformation described below.
+
+## built-in properties
+
+Exceptions are not made for built-in functions such as `forEach`, `push`, and
+`length`. Rather, utility functions `ACforEach`, `ACpush`, and `AClength` provide
+replacement services.
+
+The function `Object.keys()` is not available. In its place `ACkeys()` returns an
+array of only those key names matching the host URL (with the $-URL suffix
+removed).
+
+## instrumenting library functions
+
+Library functions are aware of the host URL because the compiler recognizes them
+and inserts an extra argument before the listed arguments during translation. This
+extra argument is a string constant equal to the URL of the code's origin. For
+example, a call to `ACkeys(x)` is translated to `ACkeys(originURL,x)` and
+implemented as
+
+    var ACkeys = function ACkeys(PVurl,PVobj) {
+        var LVresult = [];
+        Object.keys(PVobj).forEach(function (PVk) {
+            var LVi = PVk.lastIndexOf('$');
+            if (LVi > 0 && PVk.slice(LVi + 1) == PVurl) {
+                LVresult.push(PVk.slice(0,LVi));
+            }
+        });
+        return LVresult;
+    }
+
+## adding the URL to member names
 
 <table>
     <tr>
@@ -28,12 +70,14 @@ transformation:
     </tr>
 </table>
 
-From the point of view of the code that executes within this "jail", nothing has
-changed, aside from being restricted to a subset of JavaScript / ECMAScript.
+From the point of view of the user code, the transformation that adds the URL is
+transparent.
+
+## library reference
 
 #### `ACexportProperty(subject, foreignURL, property)`
 
-#### `ACexportProperties(subject, foreignURL, propertyList)`
+#### `ACexportProperties(subject, foreignURL, properties)`
 
 These library functions take an arbitrary argument for `subject`, a string such as
 "$ssh://git@github.com/ghuser/ghrepo" (that is to say: a dollar sign followed by a
@@ -42,8 +86,8 @@ array of property names for `properties`. It first checks that the caller has
 write access to the property or properties named for the foreign URL specified.
 This write access is granted if and only if the following condition is met: the
 value of the property is a two-element array `["#import", "$..."]` where `"$..."`
-is the string naming the URL the object expects to get a value from or the string
-"*". This "import token" grants the right to receive a value via `ACexport`.
+is the string naming the origin URL or the string "*". This "import token" grants
+the right to receive a value via `ACexport`.
 
 `ACexport` then copies the value/values of the corresponding property/properties
 from one URL to another so code that executes from the other URL can access those
@@ -62,12 +106,15 @@ code that executes with origin equal to the superbot can now "see" the propertie
 expression "x.foo" or "x['foo']". This is made possible by rewriting the syntax
 tree for expressions matching the patterns "a.b" and "a[b]" described above.
 
-In order to see whether or not a given property can be exported to, a library
-function (which, being a system function, executes "without origin" and therefore
-without the constraint that it only read from and write to properties with an
-$-URL extension) `ACcanExport(subject, foreignURL, property)` returns true or false
-depending on whether or not the subject[property] can be exported to the supplied
-URL. It is implemented as
+#### `ACcanExportProperty(subject, foreignURL, property)`
+
+#### `ACcanExportProperties(subject, foreignURL, properties)`
+
+In order to see whether or not a given property can be exported to, these library
+functions (which, being system functions, execute "without origin" and therefore
+without the constraint that it only read from and write to properties with a
+$-URL extension) return true or false depending on whether or not the
+subject[property] can be exported to the supplied URL. It is implemented as
 
     var ACcanExport = function ACcanExport(hostURL, subject, foreignURL, property) {
         var token = subject[property + foreignURL];
@@ -77,18 +124,18 @@ URL. It is implemented as
 
 The caller only passes the last three of the four parameters. The remaining
 parameter, `hostURL`, gains its value through a static code transformation that
-inserts a string representing the git URL of the host.
+inserts a string representing the origin URL of the host.
 
 #### `ACimportProperty(subject, foreignURL, property)`
 
 #### `ACimportProperties(subject, foreignURL, properties)`
 
-The library functions  and operates in the inverse manner by reading the value of
-a property for an object that has been made available. The function requires read
+These library functions operate in the inverse manner by reading the value of a
+property for an object that has been made available. The function requires read
 access for the named properties. This read access is granted when the value is
 wrapped in an "export token" such as the three-element array `["#export",
-"$ORIGIN", y]`. This grants read access for the value y to code executing from the
-origin named. It is possible to give general read access with `["#export", "*",
+"$url", y]`. This grants read access for the value y to code executing from the
+url named. It is possible to give general read access with `["#export", "*",
 y]` which allows code anywhere to run `ACimport` in order to get at it (of course
 the code must first gain access to a reference to the parent object in order to
 pass it to `ACimport` the first place).
