@@ -107,8 +107,21 @@ var FFformatHTML = function FFformatHTML(PVtree) {
     return LVindented.join(" ");
 };
 
-// Use a hash "#" prefix for definitions in order to avoid confusion when
-// LVdefName == toString and so on
+var FFdefStackLookup = function FFdefStackLookup(PVdefStack, PVuseName) {
+    var LVi;
+    for (LVi = PVdefStack.length - 1; LVi >= 0; LVi -= 1) {
+        if (PVdefStack[LVi].hasOwnProperty('#' + PVuseName)) {
+            var LVlink = PVdefStack[LVi]['#' + PVuseName];
+            return { MMrc : 0, MMlink : LVlink };
+        }
+    }
+    return { MMrc : -1 };
+};
+
+var DCdefError = -10;
+var DCdefErrorDesc = "definition for variable exists in enclosing scope: ";
+
+// Walk syntax tree and extract def-use data
 var FFwalkTree = function FFwalkTree(PVtree) {
     var LVscopeTree = [];
     var LVstack = [LVscopeTree];
@@ -123,13 +136,20 @@ var FFwalkTree = function FFwalkTree(PVtree) {
     var FFwalkHelper = function FFwalkHelper (PVexpr) {
         if (! (PVexpr instanceof Array)) {
             LVstack[LVstack.length - 1].push(PVexpr);
-            return;
+            return { MMrc : 0 };
         }
         // update definitions
         if (PVexpr.length >= 2 && PVexpr[0] == '(' && PVexpr[1] == 'def') {
             var LVatLoc = PVexpr[2].indexOf('@');
             assert(LVatLoc > 0);
             var LVdefName = PVexpr[2].slice(0,LVatLoc);
+            // disallow the creation of a binding that shadows another
+            if (FFdefStackLookup(LVdefStack,LVdefName).MMrc == 0) {
+                return {
+                    MMrc : DCdefError,
+                    MMerror : DCdefErrorDesc + PVexpr[2]
+                };
+            }
             LVdefStack[LVdefStack.length - 1]['#' + LVdefName] = PVexpr[2];
         }
         var LVelt = [];
@@ -137,7 +157,7 @@ var FFwalkTree = function FFwalkTree(PVtree) {
         LVstack.push(LVelt);
         if (PVexpr.length == 0) {
             LVstack.pop();
-            return; 
+            return { MMrc : 0 };
         }
         // set up use
         var LVuseFlag = 0;
@@ -147,18 +167,11 @@ var FFwalkTree = function FFwalkTree(PVtree) {
             var LVatLoc = PVexpr[2].indexOf('@');
             assert(LVatLoc > 0);
             var LVuseName = PVexpr[2].slice(0,LVatLoc);
-            var LVi;
-            var LVfoundScope = 0;
-            for (LVi = LVdefStack.length - 1; LVi >= 0; LVi -= 1) {
-                if (LVdefStack[LVi].hasOwnProperty('#' + LVuseName)) {
-                    var LVlink = LVdefStack[LVi]['#' + LVuseName];
-                    LVuseData = ['->',LVlink];
-                    LVtokenRefLinks[PVexpr[2]] = LVlink;
-                    LVfoundScope = 1;
-                    break;
-                }
-            }
-            if (! LVfoundScope) {
+            var LVdef = FFdefStackLookup(LVdefStack, LVuseName);
+            if (LVdef.MMrc == 0) {
+                LVtokenRefLinks[PVexpr[2]] = LVdef.MMlink;
+                LVuseData = ['->',LVdef.MMlink];
+            } else {
                 LVundef.push(PVexpr[2]);
                 LVuseData = ['->','???'];
             }
@@ -170,8 +183,8 @@ var FFwalkTree = function FFwalkTree(PVtree) {
             assert(LVparams != null);
         }
         // visit elements
+        var LVi;
         if (PVexpr[0][0] == '{') {
-            var LVi;
             LVscopeStack.push(PVexpr);
             LVdefStack.push({});
             if (LVparams != null) {
@@ -180,26 +193,42 @@ var FFwalkTree = function FFwalkTree(PVtree) {
                     var LVatLoc = LVparam.indexOf('@');
                     assert(LVatLoc > 0);
                     var LVdefName = LVparam.slice(0,LVatLoc);
+                    // disallow the creation of a binding that shadows another
+                    if (FFdefStackLookup(LVdefStack, LVdefName).MMrc == 0) {
+                        return {
+                            MMrc : DCdefError,
+                            MMerror : DCdefErrorDesc + LVparam
+                        };
+                    }
                     LVdefStack[LVdefStack.length - 1]['#' + LVdefName] = LVparam;
                 }
                 LVparams = null;
             }
             for (LVi = 0; LVi < PVexpr.length; LVi += 1) {
-                FFwalkHelper(PVexpr[LVi]);
+                var LVwhResult = FFwalkHelper(PVexpr[LVi]);
+                if (LVwhResult.MMrc != 0) {
+                    return LVwhResult;
+                }
             }
             LVscopeStack.pop();
             LVdefStack.pop();
         } else {
-            var LVi;
             for (LVi = 0; LVi < PVexpr.length; LVi += 1) {
                 if (LVuseFlag && PVexpr[LVi] == ')') {
                     LVuseData.forEach(function (PVx) { LVelt.push(PVx); });
                 }
-                FFwalkHelper(PVexpr[LVi]);
+                var LVwhResult = FFwalkHelper(PVexpr[LVi]);
+                if (LVwhResult.MMrc != 0) {
+                    return LVwhResult;
+                }
             }
         }
+        return { MMrc : 0 };
     };
-    FFwalkHelper(PVtree);
+    var LVwhResult = FFwalkHelper(PVtree);
+    if (LVwhResult.MMrc != 0) {
+        return LVwhResult;
+    }
     return {
         MMrc : 0,
         MMscopeTree : LVscopeTree,
@@ -216,14 +245,26 @@ var FFrootFilename = function FFrootFilename(PVfilename) {
     return PVfilename.slice(0,LVdotIndex);
 };
 
+var FFassertWalk = function FFassertWalk(PVinput, PVrc) {
+    var LVparse = FFscopeParse(PVinput);
+    assert(LVparse.MMrc == 0);
+    var LVsyntax = LVparse.MMsyntax;
+    var LVwalkResult = FFwalkTree(LVsyntax.MMdata3);
+    assert(LVwalkResult.MMrc == PVrc);
+};
+
+FFassertWalk("var q = function e(a,b) { var a = 10; };", DCdefError);
+FFassertWalk("var e = function e(a,b) {" +
+        "var f = function f(b,c) { ; }; };", DCdefError);
+
 var FFtest = function FFtest(PVfilename) {
     assert(typeof PVfilename == "string");
-    RRfs.readFile(PVfilename, 'utf8', function (err, data) {
-        if (err) {
+    RRfs.readFile(PVfilename, 'utf8', function (PVerr, PVdata) {
+        if (PVerr) {
             console.log("Unable to read file: " + PVfilename);
             return;
         }
-        var LVparse = FFscopeParse(data);
+        var LVparse = FFscopeParse(PVdata);
         if (LVparse.MMrc != 0) {
             console.log("FFscopeParse failed");
             console.log(LVparse);
@@ -232,9 +273,14 @@ var FFtest = function FFtest(PVfilename) {
         var LVsyntax = LVparse.MMsyntax;
         var LVtokens = LVparse.MMtokens;
         var LVsymbols = LVparse.MMsymbols;
-        console.log(data);
+        console.log(PVdata);
         console.log("# Scope data");
         var LVwalkResult = FFwalkTree(LVsyntax.MMdata3);
+        if (LVwalkResult.MMrc != 0) {
+            console.log("walkTree failed");
+            console.log(LVwalkResult);
+            return;
+        }
         var LVscopeTree = LVwalkResult.MMscopeTree;
         console.log(FFformatScope(LVscopeTree));
         if (LVwalkResult.MMundef.length > 0 ) {
