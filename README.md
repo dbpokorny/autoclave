@@ -21,10 +21,10 @@ transformation:
         <th>Original Syntax</th><th>Transformed Syntax</th>
     </tr>
     <tr>
-        <td>`a.b`</td><td>`a['b'+'$'+originURL]`</td>
+        <td><code>a.b</code></td><td><code>a['b'+'$'+originURL]</code></td>
     </tr>
     <tr>
-        <td>`x[y]`</td><td>`x[y+'$'+originURL]`</td>
+        <td><code>x[y]</code></td><td><code>x[y+'$'+originURL]</code></td>
     </tr>
 </table>
 
