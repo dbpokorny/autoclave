@@ -1,24 +1,37 @@
 # autoclave.js (fictional / speculative)
 
-Autoclave is an alternative way to execute a sublanguage of JavaScript. It
-consists of a scanner, a parser, some static analysis, and some static
-transformations.
+Autoclave is an alternative way to execute a sublanguage of JavaScript. It is
+directed at the following problem: let a bot download and run JavaScript either
+directly from a web visitor or from a github repository. 
 
 The proposed technology is orthogonal to and compatible with the iframe sandbox
 that manages the interaction of code from different domains in HTML5. On the
 server, autoclave isolates the activity of programs from multiple semi-trusted
 sources.
 
-All code (outside system library functions described below) executes as the agent
-of a git *repository*, the *origin*, identified by git URL.
+Autoclave consists of a scanner, a parser, some static analysis, and some static
+transformations.
 
-Code from a given repository only has access to those properties that end with "$"
-followed by the git URL of the repository. This creates a private namespace of
-members per URL. From the point of view of code, member access operations are
+# trusted and semi-trusted code
+
+There are two classes of code: trusted and semi-trusted. Trusted code is "normal"
+and executes in the usual manner in the underlying implementation. Semi-trusted
+code is transformed before it is executed:
+ - it executes as the agent of a git *repository*, the *origin*, identified by git
+   URL
+ - its origin URL is "baked in" and available as a string literal to library
+   functions
+ - the properties of an object which semi-trusted code may access is limited to
+   those with a "$-URL" suffix: a name ending with "$" followed by the origin URL
+
+This creates a private namespace of fields per *URL* (unlike cookies which work
+per *domain*). From the point of view of code, member access operations are
 rewritten by a code transformation to satisfy this constraint.
 
-For example code originating from "ssh://git@github.com/ghuser/ghrepo" that wishes
-to access the member "scopeTree" of object "x" would be compiled to
+### Example
+
+Code from "ssh://git@github.com/ghuser/ghrepo" that wishes to access the member
+"scopeTree" of object "x" is compiled to
 `x["scopeTree$ssh://git@github.com/ghuser/ghrepo"]`.
 
 ## arrays
