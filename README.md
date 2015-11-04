@@ -9,7 +9,7 @@ a websise.
 **Table of Contents**
 
 - [autoclave.js (fictional / speculative)](#autoclavejs-fictional--speculative)
-- [trusted and semi-trusted code](#trusted-and-semi-trusted-code)
+  - [trusted and semi-trusted code](#trusted-and-semi-trusted-code)
     - [Example](#example)
   - [arrays](#arrays)
   - [built-in properties](#built-in-properties)
@@ -21,7 +21,6 @@ a websise.
       - [`ACimportProperty(obj, foreignURL, property)`](#acimportpropertyobj-foreignurl-property)
       - [`ACkeys(object)`](#ackeysobject)
 
-
 The proposed technology is orthogonal to and compatible with the iframe sandbox
 that manages the interaction of code from different domains in HTML5. On the
 server, autoclave isolates the activity of programs from multiple semi-trusted
@@ -30,7 +29,7 @@ sources.
 Autoclave consists of a scanner, a parser, some static analysis, and some static
 transformations.
 
-# trusted and semi-trusted code
+## trusted and semi-trusted code
 
 There are two classes of code: trusted and semi-trusted. Trusted code is "normal"
 and executes in the usual manner in the underlying implementation. Semi-trusted
