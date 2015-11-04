@@ -1,3 +1,12 @@
+# autoclave.js (fictional / speculative)
+
+Autoclave is an alternative way to execute a sublanguage of JavaScript. It is
+directed at the following problem: give a bot the tools it needs to download code
+either directly from a web visitor or from a github repository and run it on the
+server or serve it to web visitors. In this way, web visitors can add services to
+a websise.
+
+**Table of Contents**
 
 - [autoclave.js (fictional / speculative)](#autoclavejs-fictional--speculative)
 - [trusted and semi-trusted code](#trusted-and-semi-trusted-code)
@@ -7,18 +16,11 @@
   - [instrumenting library functions](#instrumenting-library-functions)
   - [adding the URL to member names](#adding-the-url-to-member-names)
   - [library reference](#library-reference)
-      - [`ACexportProperty(subject, foreignURL, property)`](#acexportpropertysubject-foreignurl-property)
-      - [`ACexportProperties(subject, foreignURL, properties)`](#acexportpropertiessubject-foreignurl-properties)
-      - [`ACcanExportProperty(subject, foreignURL, property)`](#accanexportpropertysubject-foreignurl-property)
-      - [`ACcanExportProperties(subject, foreignURL, properties)`](#accanexportpropertiessubject-foreignurl-properties)
-      - [`ACimportProperty(subject, foreignURL, property)`](#acimportpropertysubject-foreignurl-property)
-      - [`ACimportProperties(subject, foreignURL, properties)`](#acimportpropertiessubject-foreignurl-properties)
+      - [`ACexportProperty(obj, foreignURL, property)`](#acexportpropertyobj-foreignurl-property)
+      - [`ACcanExportProperty(obj, foreignURL, property)`](#accanexportpropertyobj-foreignurl-property)
+      - [`ACimportProperty(obj, foreignURL, property)`](#acimportpropertyobj-foreignurl-property)
+      - [`ACkeys(object)`](#ackeysobject)
 
-# autoclave.js (fictional / speculative)
-
-Autoclave is an alternative way to execute a sublanguage of JavaScript. It is
-directed at the following problem: let a bot download and run JavaScript either
-directly from a web visitor or from a github repository. 
 
 The proposed technology is orthogonal to and compatible with the iframe sandbox
 that manages the interaction of code from different domains in HTML5. On the
@@ -104,25 +106,21 @@ transparent.
 
 ## library reference
 
-#### `ACexportProperty(subject, foreignURL, property)`
+#### `ACexportProperty(obj, foreignURL, property)`
 
-#### `ACexportProperties(subject, foreignURL, properties)`
-
-These library functions take an arbitrary argument for `subject`, a string such as
+These library functions take an arbitrary argument for `obj`, a string such as
 "$ssh://git@github.com/ghuser/ghrepo" (that is to say: a dollar sign followed by a
-git URL) for `foreignURL`, and either a single property name for `property` or an
-array of property names for `properties`. It first checks that the caller has
-write access to the property or properties named for the foreign URL specified.
-This write access is granted if and only if the following condition is met: the
-value of the property is a two-element array `["#import", "$..."]` where `"$..."`
-is the string naming the origin URL or the string "*". This "import token" grants
-the right to receive a value via `ACexport`.
+git URL) for `foreignURL`, and a property name for `property`. It first checks
+that the caller has write access to the property named for the foreign URL
+specified. This write access is granted if and only if the following condition is
+met: the value of the property is a two-element array `["#import", "$..."]` where
+`"$..."` is the string naming the origin URL or the string "*". This "import
+token" grants the right to receive a value via `ACexport`.
 
-`ACexport` then copies the value/values of the corresponding property/properties
-from one URL to another so code that executes from the other URL can access those
-properties. For example if `subject` is `x`, `property` is `"foo"` and
-`foreignURL` is "$ssh://git@github.com/nietzsche/superbot", then the following are
-executed in the enclosing interpreter:
+`ACexport` then copies the value of the property from the host URL to the foreign
+URL so code that executes in the foreign URL can access that property. For example
+if `obj` is `x`, `property` is `"foo"` and `foreignURL` is
+"$ssh://git@github.com/nietzsche/superbot", then the following are executed:
 
     var hostURL = "ssh://git@github.com/ghuser/ghrepo";
     var foreignURL = "ssh://git@github.com/nietzsche/superbot";
@@ -130,23 +128,20 @@ executed in the enclosing interpreter:
     assert(x["foo$" + foreignURL][1] == host || x["foo$" + foreignURL][1] == "*");
     x["foo$" + foreign] = x["foo$" + host];
 
-code that executes with origin equal to the superbot can now "see" the properties
-"foo" and "bar" on the object x, and the superbot can access this value with the
-expression "x.foo" or "x['foo']". This is made possible by rewriting the syntax
-tree for expressions matching the patterns "a.b" and "a[b]" described above.
+code that executes with origin equal to the superbot can now "see" the property
+"foo" on the object x, and the superbot can access this value with the expression
+"x.foo" or "x['foo']".
 
-#### `ACcanExportProperty(subject, foreignURL, property)`
-
-#### `ACcanExportProperties(subject, foreignURL, properties)`
+#### `ACcanExportProperty(obj, foreignURL, property)`
 
 In order to see whether or not a given property can be exported to, these library
 functions (which, being system functions, execute "without origin" and therefore
 without the constraint that it only read from and write to properties with a
 $-URL extension) return true or false depending on whether or not the
-subject[property] can be exported to the supplied URL. It is implemented as
+obj[property] can be exported to the supplied URL. It is implemented as
 
-    var ACcanExport = function ACcanExport(hostURL, subject, foreignURL, property) {
-        var token = subject[property + foreignURL];
+    var ACcanExport = function ACcanExport(hostURL, obj, foreignURL, property) {
+        var token = obj[property + foreignURL];
         return (token instanceof Array && token.length == 2 &&
             token[0] == "#import" && (token[1] == hostURL || token[1] == "*"));
     };
@@ -155,13 +150,11 @@ The caller only passes the last three of the four parameters. The remaining
 parameter, `hostURL`, gains its value through a static code transformation that
 inserts a string representing the origin URL of the host.
 
-#### `ACimportProperty(subject, foreignURL, property)`
-
-#### `ACimportProperties(subject, foreignURL, properties)`
+#### `ACimportProperty(obj, foreignURL, property)`
 
 These library functions operate in the inverse manner by reading the value of a
 property for an object that has been made available. The function requires read
-access for the named properties. This read access is granted when the value is
+access for the named property. This read access is granted when the value is
 wrapped in an "export token" such as the three-element array `["#export",
 "$url", y]`. This grants read access for the value y to code executing from the
 url named. It is possible to give general read access with `["#export", "*",
@@ -170,7 +163,7 @@ the code must first gain access to a reference to the parent object in order to
 pass it to `ACimport` the first place).
 
 For example if `ACimport` is called from code that executes from origin
-"github.com/ghuser/ghrepo" where `subject` is `x`, `property` is `"foo"`
+"github.com/ghuser/ghrepo" where `obj` is `x`, `property` is `"foo"`
 and `foreignURL` is "$git@github.com/plato/lib", then `ACimportProperty` will
 perform the check for read access and copy:
 
@@ -180,6 +173,7 @@ perform the check for read access and copy:
     assert(x["foo$" + foreignURL][1] == hostURL || x["foo$ + foreignURL" == "*");
     x["foo$" + hostURL] = x["foo$" + foreignURL][2];
 
-The function `Object.keys()` is replaced with `hostKeys()` which returns only
+#### `ACkeys(object)`
+The function `Object.keys()` is replaced with `ACkeys()` which returns only
 those keys of an object corresponding to the host URL of the caller, with the
 $-URL suffix removed.
