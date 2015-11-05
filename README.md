@@ -1,12 +1,26 @@
 # autoclave.js (fictional / speculative)
 
 Autoclave is an alternative way to execute a sublanguage of JavaScript. It is
-directed at the following problem: give a bot the tools it needs to download code
-either directly from a web visitor or from a github repository and run it on the
-server or serve it to web visitors. In this way, web visitors can add services to
-a websise.
+directed at the following problem: give an online interactive shell the tools it
+needs to download code either directly from a web visitor or from a github
+repository and run it on the server or serve it to web visitors. In this way, web
+visitors can add services to a websise.
 
-**Table of Contents**
+Upon visiting autoclave.io, the web visitor may interact with the console in the
+browser to load coad into the running server process that changes the behavior
+of the server when a certain URL is loaded.
+
+    > update_github(user,repo)
+    ...
+    pulling from ...
+    updating dependency ...
+    clonning new dependency ...
+    invaldating require.cache...
+    serving at https://autoclave.io/gh/user/repo
+
+For the repository, code in branch ac-pages will be treated as serving requests to
+this URL (and must be written in the sublanguage of JavaScript described). As for
+content served, for the moment only text/plain.
 
 - [autoclave.js (fictional / speculative)](#autoclavejs-fictional--speculative)
   - [trusted and semi-trusted code](#trusted-and-semi-trusted-code)
