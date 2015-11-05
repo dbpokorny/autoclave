@@ -5,6 +5,8 @@
 // - Any compound statement (CS) introduces a new scope which is identified by an
 //   offset and length corresponding to the extent of "{ ... }" in the source code
 
+"use strict";
+
 var RRtoken = require("./token.js");
 var RRtable = require("./table.js");
 var FFformatTokenRef = RRtable.MMformatTokenRef;

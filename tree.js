@@ -1,3 +1,5 @@
+"use strict";
+
 var RRtoken = require("./token.js");
 var RRtable = require("./table.js");
 var assert = require("assert");
