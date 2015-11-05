@@ -111,17 +111,20 @@ var FFtest = function FFtest(PVfilename) {
             console.log(err);
             return;
         }
-        var LVtree = FFtree(data);
-        if (LVtree.MMrc != 0) {
-            console.log(LVtree);
+        var LVbundle = FFtree(data);
+        if (LVbundle.MMrc != 0) {
+            console.log(LVbundle);
             return;
         }
         console.log(data);
+        console.log("# Syntax Tree");
+        var LVword = LVbundle.MMtree.toString().replace(RegExp(",","g")," ");
+        console.log(LVword);
         console.log("# Member data");
-        var LVmember = LVtree.MMdata4.toString().replace(RegExp(",","g")," ");
+        var LVmember = LVbundle.MMdata4.toString().replace(RegExp(",","g")," ");
         console.log(LVmember);
         console.log("# Draft data");
-        var LVdraft = FFformatDraft(LVtree.MMdata5);
+        var LVdraft = FFformatDraft(LVbundle.MMdata5);
         console.log(LVdraft);
     });
 };
