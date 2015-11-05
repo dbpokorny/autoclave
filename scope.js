@@ -307,7 +307,7 @@ var FFtest = function FFtest(PVfilename) {
         // Generate HTML
         var LVparse2 = RRtable.MMtestParse2(LVsymbols, LVtokens);
         assert(LVparse2.MMrc == 0);
-        var LVhtml = FFformatHTML(LVparse2.MMdata6);
+        var LVhtml = FFformatHTML(LVparse2.MMhtmlTree);
         // console.log(LVhtml);
         var LVheader = ('<html><head>' +
                 '<style>' +

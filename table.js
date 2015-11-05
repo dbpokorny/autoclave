@@ -878,7 +878,7 @@ FFbuildForHTML = function FFbuildForHTML(PVa,PVb,PVc,PVbody) {
 };
 
 // 1 GVrules
-// data2 GVreducers
+// data2 GVword
 // data3 GVscopes
 //       these functions compute the scopes of variables
 // data4 GVmembers
@@ -889,7 +889,7 @@ FFbuildForHTML = function FFbuildForHTML(PVa,PVb,PVc,PVbody) {
 //       (2nd pass) generated HTML
 // ? GVconstraints ??? allow a function to reject invalid syntactic forms
 var GVrules = [];
-var GVreducers = [];
+var GVword = [];
 var GVscopes = [];
 var GVmembers = [];
 var GVdrafts = [];
@@ -901,7 +901,7 @@ var FFmakeRulesAndReducers = function FFmakeRulesAndReducers() {
         if (LVi % 6 == 0) {
             GVrules.push(GVrulesAndReducers[LVi]);
         } else if (LVi % 6 == 1) {
-            GVreducers.push(GVrulesAndReducers[LVi]);
+            GVword.push(GVrulesAndReducers[LVi]);
         } else if (LVi % 6 == 2) {
             GVscopes.push(GVrulesAndReducers[LVi]);
         } else if (LVi % 6 == 3) {
@@ -915,7 +915,7 @@ var FFmakeRulesAndReducers = function FFmakeRulesAndReducers() {
     for (LVi = 0; LVi < GVrules.length; LVi += 1) {
         // console.log(LVi);
         // console.log(GVrules[LVi]);
-        assert(GVrules[LVi][2].length == GVreducers[LVi].length);
+        assert(GVrules[LVi][2].length == GVword[LVi].length);
         assert(GVrules[LVi][2].length == GVscopes[LVi].length);
         assert(GVrules[LVi][2].length == GVmembers[LVi].length);
         assert(GVrules[LVi][2].length == GVdrafts[LVi].length);
@@ -986,7 +986,7 @@ var GVitemMoveDotRight = [];
 var GVitems = [];
 
 // key is index into GVitems
-// val is index into GVreducers
+// val is index into GVword
 var GVacceptIndex = {};
 
 var GVacceptItem;
@@ -1198,7 +1198,7 @@ var GVitemSetGeneration = {};
 var GVitemSetTrans = {};
 
 // key is index into GVitemSets
-// val is set of indexes into GVreducers
+// val is set of indexes into GVword
 var GVitemSetReduce = [];
 
 // key is index into GVitemSets
@@ -1352,8 +1352,7 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
     var LVdata3 = []; // scopes
     var LVdata4 = []; // members
     var LVdata5 = []; // drafts
-    var LVtree = []; // reductions
-    var LVsymbolStack = [];
+    var LVword = []; // reductions
     var LVindexTree = [];
     var LVlastToken = null;
     while (true) {
@@ -1373,7 +1372,7 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
                 var LVtoken = PVinputData[LVi];
                 LVlastToken = LVtoken;
                 if (LVsymbol != "NAME" && LVsymbol != "NUMBER" && LVsymbol != "STRING") {
-                    LVtree.push(LVsymbol);
+                    LVword.push(LVsymbol);
                     // handle scope
                     if (LVsymbol == '{' || LVsymbol == '}') {
                         LVdata3.push(LVtoken);
@@ -1386,14 +1385,13 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
                         LVdata4.push(LVsymbol);
                     }
                 } else {
-                    LVtree.push(LVtoken.MMchars);
+                    LVword.push(LVtoken.MMchars);
                     LVdata3.push(LVtoken);
                     LVdata4.push(LVtoken.MMchars + '[' + LVtoken.MMoffset + ':' + LVtoken.MMlength + ']');
                 }
                 LVtokenTree.push(LVtoken);
                 LVdata2.push(LVtoken.MMchars);
                 LVdata5.push(LVtoken);
-                LVsymbolStack.push(LVsymbol);
                 LVindexTree.push([LVi,LVi]);
                 LVi += 1;
                 continue;
@@ -1417,32 +1415,27 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
             var LVdata5Items = [];
             var LVindexItems = [];
             for (LVj = 0; LVj < LVruleBodyLength; LVj += 1) {
-                LVtreeItems.push(LVtree.pop());
+                LVtreeItems.push(LVword.pop());
                 LVdata3Items.push(LVdata3.pop());
                 LVdata4Items.push(LVdata4.pop());
                 LVdata5Items.push(LVdata5.pop());
                 LVdataItems.push(LVtokenTree.pop());
                 LVdata2Items.push(LVdata2.pop());
-                LVsymbolStack.pop();
                 LVstack.pop();
                 LVindexItems.push(LVindexTree.pop());
             }
-            // LVtree
+            // LVword
             LVtreeItems.reverse();
-            var LVreduceResult = GVreducers[LVruleNum].apply(null, LVtreeItems);
-            LVtree.push(LVreduceResult);
+            LVword.push(GVword[LVruleNum].apply(null, LVtreeItems));
             // LVdata3
             LVdata3Items.reverse();
-            var LVdata3ScopeResult = GVscopes[LVruleNum].apply(null, LVdata3Items);
-            LVdata3.push(LVdata3ScopeResult);
+            LVdata3.push(GVscopes[LVruleNum].apply(null, LVdata3Items));
             // LVdata4
             LVdata4Items.reverse();
-            var LVdata4MemberResult = GVmembers[LVruleNum].apply(null, LVdata4Items);
-            LVdata4.push(LVdata4MemberResult);
+            LVdata4.push(GVmembers[LVruleNum].apply(null, LVdata4Items));
             // LVdata5
             LVdata5Items.reverse();
-            var LVdata5DraftResult = GVdrafts[LVruleNum].apply(null, LVdata5Items);
-            LVdata5.push(LVdata5DraftResult);
+            LVdata5.push(GVdrafts[LVruleNum].apply(null, LVdata5Items));
             // LVtokenTree
             LVdataItems.push("Rule" + LVruleNum);
             LVdataItems.reverse();
@@ -1451,8 +1444,6 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
             LVdata2Items.push("Rule" + LVruleNum);
             LVdata2Items.reverse();
             LVdata2.push(LVdata2Items);
-            // update symbol stack
-            LVsymbolStack.push(LVreduceSymbol);
             // LVindex
             var LVindexSpan = FFcomputeIndexSpan(LVindexItems);
             LVindexTree.push(LVindexSpan);
@@ -1468,7 +1459,7 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
                 }
                 return {
                     MMrc : 0,
-                    MMtree : LVtree,
+                    MMword : LVword,
                     MMtokenTree : LVtokenTree,
                     MMdata2 : LVdata2,
                     MMdata3 : LVdata3,
@@ -1485,7 +1476,7 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
             MMerror : ("Unknown action on line " +
                     (LVlastToken.MMlineno + 1) + ", col " +
                     (LVlastToken.MMcolno + 1)),
-            MMinfo : FFformatInfo(util.format(LVtree))
+            MMinfo : FFformatInfo(util.format(LVword))
         };
     }
 };
@@ -1500,15 +1491,14 @@ FFformatInfo = function FFformatInfo(PVstr) {
     }
 };
 
+// FFtestParse2 expects the tokens to have link data that associates a definition
+// with a use.
 var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
     var LVi = 0; // index into PVinput
     var LVstack = [0];
     var LVoutput = [];
     var LVtokenTree = [];
-    var LVtree = []; // reductions
-    var LVdata6 = []; // html
-    var LVsymbolStack = [];
-    var LVlastToken = null;
+    var LVhtml = [];
     while (true) {
         var LVstackTop = LVstack[LVstack.length - 1] | 0;
         var LVsymbol = "";
@@ -1521,15 +1511,8 @@ var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
             if (LVtrans != -1) {
                 LVstack.push(LVtrans);
                 var LVtoken = PVinputData[LVi];
-                LVlastToken = LVtoken;
-                if (LVsymbol != "NAME" && LVsymbol != "NUMBER" && LVsymbol != "STRING") {
-                    LVtree.push(LVsymbol);
-                } else {
-                    LVtree.push(LVtoken.MMchars);
-                }
-                LVdata6.push(LVtoken);
+                LVhtml.push(LVtoken);
                 LVtokenTree.push(LVtoken);
-                LVsymbolStack.push(LVsymbol);
                 LVi += 1;
                 continue;
             }
@@ -1544,30 +1527,20 @@ var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
             // reduce
             var LVruleBodyLength = GVrules[LVruleNum][2].length;
             var LVj;
-            var LVtreeItems = [];
             var LVdataItems = [];
-            var LVdata6Items = [];
+            var LVhtmlItems = [];
             for (LVj = 0; LVj < LVruleBodyLength; LVj += 1) {
-                LVtreeItems.push(LVtree.pop());
                 LVdataItems.push(LVtokenTree.pop());
-                LVsymbolStack.pop();
                 LVstack.pop();
-                LVdata6Items.push(LVdata6.pop());
+                LVhtmlItems.push(LVhtml.pop());
             }
-            // LVtree
-            LVtreeItems.reverse();
-            var LVreduceResult = GVreducers[LVruleNum].apply(null, LVtreeItems);
-            LVtree.push(LVreduceResult);
-            // LVdata6
-            LVdata6Items.reverse();
-            var LVdata6HTMLResult = GVhtml[LVruleNum].apply(null, LVdata6Items);
-            LVdata6.push(LVdata6HTMLResult);
+            // LVhtml
+            LVhtmlItems.reverse();
+            LVhtml.push(GVhtml[LVruleNum].apply(null, LVhtmlItems));
             // LVtokenTree
             LVdataItems.push("Rule" + LVruleNum);
             LVdataItems.reverse();
             LVtokenTree.push(LVdataItems);
-            // update symbol stack
-            LVsymbolStack.push(LVreduceSymbol);
             var LVreduceStackTop = LVstack[LVstack.length - 1];
             var LVgoto = GVitemSetTrans[LVreduceSymbol][LVreduceStackTop];
             if (LVgoto == -1) {
@@ -1575,9 +1548,8 @@ var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
                 assert(LVi == PVinput.length);
                 return {
                     MMrc : 0,
-                    MMtree : LVtree,
                     MMtokenTree : LVtokenTree,
-                    MMdata6 : LVdata6
+                    MMhtml : LVhtml
                 };
             } else {
                 LVstack.push(LVgoto);
@@ -1590,7 +1562,7 @@ var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
 
 module.exports = {
     MMrules : GVrules,
-    MMreducers : GVreducers,
+    MMword : GVword,
     MMprintRules : FFprintRules,
     MMitems : GVitems,
     MMacceptItem : GVacceptItem,

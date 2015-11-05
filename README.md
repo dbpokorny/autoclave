@@ -1,14 +1,29 @@
 # autoclave.js (fictional / speculative)
 
-Autoclave is an alternative way to execute a sublanguage of JavaScript. It is
-directed at the following problem: give an online interactive shell the tools it
-needs to download code either directly from a web visitor or from a github
-repository and run it on the server or serve it to web visitors. In this way, web
-visitors can add services to a websise.
+Autoclave is an alternative way to execute a sublanguage of JavaScript.
 
-Upon visiting autoclave.io, the web visitor may interact with the console in the
-browser to load coad into the running server process that changes the behavior
-of the server when a certain URL is loaded.
+Problem: semi-trusted source code originating from several different URLs has been
+fetched. This code is to be run on a web application server. There are
+interdependencies between the modules and some of the modules have access rights
+to system resources while others do not. This information is indicated in a
+fully-trusted configuration file provided on the command line. **Design a system
+that protects the participants from each other.**
+
+Example solution: restrict attention to git repositories hosted on github.com.
+Allow web visitors the opportunity to name a `user/repo` combination, which will
+allow the web server to route those paths to executable code derived from the
+source code in the repository.
+
+The nature of the source code transformations is not specified, but they should
+address the following types of attacks:
+
+ - non-functional: exhaust memory / CPU
+ - functional: exceed a pre-defined security envelope
+
+In this way, github users who visit the site can add services to it. Upon
+visiting autoclave.io, the web visitor may interact with the console in the
+browser to load coad into the running server process that changes the behavior of
+the server when a certain URL is loaded.
 
     > update_github(user,repo)
     ...
