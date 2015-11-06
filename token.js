@@ -16,7 +16,7 @@ var DChexDecode = { '0' : 1, '1' : 1, '2' : 1, '3' : 1, '4' : 1, '5' : 1, '6' : 
         1, 'A' : 1, 'B' : 1, 'C' : 1, 'D' : 1, 'E' : 1, 'F' : 1 };
 
 // return -1 on error
-var FFdecodeUnicodeEscape = function FFdecodeUnicodeEscape(LVx) {
+var FFdecodeUnicodeEscape4 = function FFdecodeUnicodeEscape4(LVx) {
     assert(typeof LVx == 'string');
     assert(LVx.length == 4);
     if (DChexDecode[LVx[0]] == 1 &&
@@ -24,6 +24,17 @@ var FFdecodeUnicodeEscape = function FFdecodeUnicodeEscape(LVx) {
         DChexDecode[LVx[2]] == 1 &&   
         DChexDecode[LVx[3]] == 1) {
         return unescape('%u' + LVx);
+    }
+    return -1;
+}
+
+// return -1 on error
+var FFdecodeUnicodeEscape2 = function FFdecodeUnicodeEscape2(LVx) {
+    assert(typeof LVx == 'string');
+    assert(LVx.length == 2);
+    if (DChexDecode[LVx[0]] == 1 &&
+        DChexDecode[LVx[1]] == 1) {
+        return unescape('%' + LVx);
     }
     return -1;
 }
@@ -430,7 +441,16 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
                         if (LVi + LVj >= PVinput.length) {
                             break; // #strloop (error)
                         }
-                        LVeVal = FFdecodeUnicodeEscape(PVinput.slice(LVi+LVj-4,LVi+LVj));
+                        LVeVal = FFdecodeUnicodeEscape4(PVinput.slice(LVi+LVj-4,LVi+LVj));
+                        if (LVeVal == -1) {
+                            break; // #strloop (error)
+                        }
+                    } else if (LVe == 'x') {
+                        LVj += 3;
+                        if (LVi + LVj >= PVinput.length) {
+                            break; // #strloop (error)
+                        }
+                        LVeVal = FFdecodeUnicodeEscape2(PVinput.slice(LVi+LVj-2,LVi+LVj));
                         if (LVeVal == -1) {
                             break; // #strloop (error)
                         }
@@ -515,6 +535,9 @@ var FFtestStringScan = function FFtestStringScan() {
     assert(FFmakeTokens('"foo\n').MMrc == DCstringError);
     assert(FFmakeTokens('e.__defineGetter__').MMrc == DCinvalidIdError);
     assert(FFmakeTokens('"\\uabcd"').MMrc == 0);
+    assert(FFmakeTokens('"\\uabcd"').MMtokens[0].MMstrVal == '\uabcd');
+    assert(FFmakeTokens('"\\xef"').MMrc == 0);
+    assert(FFmakeTokens('"\\xef"').MMtokens[0].MMstrVal == '\xef');
 };
 
 FFtestStringScan();
