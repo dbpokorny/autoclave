@@ -107,6 +107,12 @@ var FFformatDraft = function FFformatDraft(PVdraftTree) {
     return LVindented.join(" ");
 };
 
+var FFrootFilename = function FFrootFilename(PVfilename) {
+    var LVdotIndex = PVfilename.indexOf('.');
+    assert(LVdotIndex > 0);
+    return PVfilename.slice(0,LVdotIndex);
+};
+
 var FFtest = function FFtest(PVfilename) {
     RRfs.readFile(PVfilename, 'utf8', function (err, data) {
         if (err) {
@@ -118,11 +124,11 @@ var FFtest = function FFtest(PVfilename) {
             console.log(LVbundle);
             return;
         }
-        console.log(data);
-        console.log("# Word Tree");
-        var LVword = LVbundle.MMword.toString().replace(RegExp(",","g")," ");
-        console.log(LVword);
-        console.log("# Member data");
+        // console.log(data);
+        // console.log("# Word Tree");
+        // var LVword = LVbundle.MMword.toString().replace(RegExp(",","g")," ");
+        // console.log(LVword);
+        // console.log("# Member data");
         var LVmember0 = LVbundle.MMdata4.toString().replace(RegExp(",","g")," ");
         var LVmembers = [];
         LVmember0.split(' ').forEach(function (LVx) {
@@ -133,9 +139,18 @@ var FFtest = function FFtest(PVfilename) {
                 }
             }
         });
-        console.log(LVmembers.join(''));
+        // console.log(LVmembers.join(''));
         // console.log("# Draft data");
-        // console.log(FFformatDraft(LVbundle.MMdata5));
+        var LVdraft = FFformatDraft(LVbundle.MMdata5);
+        var LVheader = (
+            'var autoclave = require("../autoclave.js");\n' +
+            'var GETITEM = autoclave.GETITEM;\n' +
+            'var SETITEM = autoclave.SETITEM;\n' +
+            '\n'
+        );
+        RRfs.writeFile('build/XX' + FFrootFilename(PVfilename) + '.js',
+                LVheader + LVdraft);
+        // console.log(LVdraft);
     });
 };
 

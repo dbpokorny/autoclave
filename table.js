@@ -81,6 +81,10 @@ var FFformatVar = function FFformatVar(PVt) {
     }
 };
 
+var FFaddSigil = function FFaddSigil(PVx) {
+    return PVx.slice(0,PVx.length - 1) + ('$' + PVx[PVx.length - 1]);
+};
+
 // the first rule of GVrulesAndReducers must be [PR,'->',[*]] for some [*]
 var GVrulesAndReducers = [
     [PR,'->',[PA2]],
@@ -695,7 +699,7 @@ var GVrulesAndReducers = [
         function (PVn,PV_,PVx) { return [PVn,':',PVx]; },
         function (PVn,PV_,PVx) { return [PVx]; },
         function (PVn,PV_,PVx) { return [PVn,PVx]; },
-        function (PVn,PV_,PVx) { return [PVn.MMchars,':',PVx]; },
+        function (PVn,PV_,PVx) { return [PVn.MMchars + '$',':',PVx]; },
         function (PVn,PV_,PVx) { return [PVn.MMchars,':',PVx]; },
     [LITF,'->',['NUMBER',':',X]],
         function (PVn,PV_,PVx) { return [PVn,':',PVx]; },
@@ -707,7 +711,7 @@ var GVrulesAndReducers = [
         function (PVn,PV_,PVx) { return [PVn,':',PVx]; },
         function (PVn,PV_,PVx) { return [PVx]; },
         function (PVn,PV_,PVx) { return [PVn,PVx]; },
-        function (PVn,PV_,PVx) { return [PVn.MMchars,':',PVx]; },
+        function (PVn,PV_,PVx) { return [FFaddSigil(PVn.MMchars),':',PVx]; },
         function (PVn,PV_,PVx) { return [FFhtmlEntities(PVn.MMchars),':',PVx]; },
     [PX,'->',['(', X, ')']],
         function (PVx,PVy,PVz) { return ['(',PVy,')']; },
