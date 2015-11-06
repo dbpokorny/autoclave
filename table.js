@@ -59,23 +59,27 @@ var FFsquish = function FFsquish(PVx) {
 };
 
 var FFformatParam = function FFformatParam (PVt) {
-    return '<a id="' + PVt.MMchars + '-' + PVt.MMoffset + '"><span class="hiParam">' + PVt.MMchars + '</span></a>';
+    return ['<a id="' + PVt.MMchars + '-' + PVt.MMoffset + '">','<span class="hiParam">', PVt.MMchars,
+           '</span>','</a>'];
 };
 
 var FFformatDef = function FFformatDef(PVt) {
-    return '<a id="' + PVt.MMchars + '-' + PVt.MMoffset + '">' + PVt.MMchars + '</a>';
+    return ['<a id="' + PVt.MMchars + '-' + PVt.MMoffset + '">', PVt.MMchars, '</a>'];
 };
 
 var FFformatVar = function FFformatVar(PVt) {
+    if (PVt.MMlink == undefined) {
+        return ['<span class="hiUndefVar">', PVt.MMchars, '</span>'];
+    }
     if (PVt.MMlink != 'global') {
         var LVslash = PVt.MMlink.indexOf('/');
         assert(LVslash > 0);
         var LVoffset = PVt.MMlink.slice(LVslash + 1);
-        return ('<a href="#' + PVt.MMchars + '-' + LVoffset + '"><span class="hiNormal">' + PVt.MMchars + '</span></a>');
+        return ['<a href="#' + PVt.MMchars + '-' + LVoffset + '">','<span class="hiNormal">', PVt.MMchars, '</span>','</a>'];
     } else {
         return PVt.MMchars;
     }
-}
+};
 
 // the first rule of GVrulesAndReducers must be [PR,'->',[*]] for some [*]
 var GVrulesAndReducers = [

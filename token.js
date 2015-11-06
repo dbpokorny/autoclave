@@ -26,7 +26,7 @@ var FFdecodeUnicodeEscape4 = function FFdecodeUnicodeEscape4(LVx) {
         return unescape('%u' + LVx);
     }
     return -1;
-}
+};
 
 // return -1 on error
 var FFdecodeUnicodeEscape2 = function FFdecodeUnicodeEscape2(LVx) {
@@ -37,7 +37,7 @@ var FFdecodeUnicodeEscape2 = function FFdecodeUnicodeEscape2(LVx) {
         return unescape('%' + LVx);
     }
     return -1;
-}
+};
 
 var DCcommentTypeCode = 'DCcommentTypeCode';
 var DCnewlineTypeCode = 'DCnewlineTypeCode';
@@ -441,7 +441,7 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
                         if (LVi + LVj >= PVinput.length) {
                             break; // #strloop (error)
                         }
-                        LVeVal = FFdecodeUnicodeEscape4(PVinput.slice(LVi+LVj-4,LVi+LVj));
+                        LVeVal = FFdecodeUnicodeEscape4(PVinput.slice(LVi+LVj - 4,LVi+LVj));
                         if (LVeVal == -1) {
                             break; // #strloop (error)
                         }
@@ -450,7 +450,7 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
                         if (LVi + LVj >= PVinput.length) {
                             break; // #strloop (error)
                         }
-                        LVeVal = FFdecodeUnicodeEscape2(PVinput.slice(LVi+LVj-2,LVi+LVj));
+                        LVeVal = FFdecodeUnicodeEscape2(PVinput.slice(LVi+LVj - 2,LVi+LVj));
                         if (LVeVal == -1) {
                             break; // #strloop (error)
                         }
@@ -492,7 +492,7 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
 
         return {
             MMrc : DCscanError, MMerror : "error scanning input", MMlineno :
-            LVlineno, MMcolno : LVcolno, MMchars : PVinput.slice(LVi,LVi+10) + '...'
+            LVlineno, MMcolno : LVcolno, MMchars : PVinput.slice(LVi,LVi + 10) + '...'
         };
     } // end #mainloop
 };

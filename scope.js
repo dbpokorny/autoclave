@@ -135,6 +135,7 @@ var FFwalkTree = function FFwalkTree(PVtree) {
         '#Math':'global',
         '#Object':'global',
         '#undefined':'global',
+        '#unescape':'global',
         '#process':'global',
         '#require':'global',
         '#RegExp':'global'}];
@@ -265,18 +266,23 @@ FFassertWalk("var q = function e(a,b) { var a = 10; };", DCdefError);
 FFassertWalk("var e = function e(a,b) {" +
         "var f = function f(b,c) { ; }; };", DCdefError);
 
+var DCfileError = -10;
+var DCparseError = -20;
+var DCdefUseError = -30;
+var DCundefVarError = -40;
+
 var FFtest = function FFtest(PVfilename) {
     assert(typeof PVfilename == "string");
     RRfs.readFile(PVfilename, 'utf8', function (PVerr, PVdata) {
         if (PVerr) {
             console.log("Unable to read file: " + PVfilename);
-            return;
+            return DCfileError;
         }
         var LVparse = FFscopeParse(PVdata);
         if (LVparse.MMrc != 0) {
             console.log("FFscopeParse failed");
             console.log(LVparse);
-            return;
+            return DCparseError;
         }
         var LVsyntax = LVparse.MMsyntax;
         var LVtokens = LVparse.MMtokens;
@@ -285,7 +291,7 @@ var FFtest = function FFtest(PVfilename) {
         if (LVwalkResult.MMrc != 0) {
             console.log("walkTree failed");
             console.log(LVwalkResult);
-            return;
+            return DCdefUseError;
         }
         var LVscopeTree = LVwalkResult.MMscopeTree;
         // console.log(FFformatScope(LVscopeTree));
@@ -294,6 +300,7 @@ var FFtest = function FFtest(PVfilename) {
         if (LVwalkResult.MMundef.length > 0 ) {
             console.log("# Undefined variables");
             console.log(LVwalkResult.MMundef);
+            // return DCundefVarError;
         }
         var LVtokenRefLinks = LVwalkResult.MMtokenRefLinks;
         // console.log(LVtokenRefLinks);
@@ -320,6 +327,7 @@ var FFtest = function FFtest(PVfilename) {
                 '.hiFunction {color:#40ffff;}' +
                 '.hiIdentifier {color:#40ffff;}' +
                 '.hiNormal {color:#ffffff;}' +
+                '.hiUndefVar {color:#ff0000;}' +
                 '.hiParam {border: 1px solid green;}' +
                 '.hiStatement {color:#ffff60;}' +
                 '.hiRepeat {color:#ffff60;}' +
