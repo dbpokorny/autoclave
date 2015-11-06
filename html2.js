@@ -7,8 +7,11 @@ var options = {
 };
 
 https.createServer(options, function (req, res) {
-  res.writeHead(200);
-  res.end("hello world\n");
-  console.log("hello!\n");
+    console.log(Object.keys(res))
+    res.writeHead(200 {'Content-Type': 'text/html'});
+    res.end(
+        '<html><head></head><body>hello world, <b>how are you?</b>' +
+        '</body></html>');
+    console.log("hello!\n");
 }).listen(8443);
 console.log("server running\n");
