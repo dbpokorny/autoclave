@@ -80,7 +80,7 @@ var GVinvalidIdsArray = [ 'case', 'class', 'catch', 'const', 'debugger', 'defaul
     'assign', 'create', 'defineProperties', 'defineProperty', 'freeze',
     'getNotifier', 'getOwnPropertyDescriptor', 'getOwnPropertySymbols',
     'getPrototypeOf', '__defineGetter__', '__defineSetter__', '__lookupGetter__',
-    '__lookupSetter__', 'constructor','GETITEM','SETITEM','HASITEM'];
+    '__lookupSetter__', 'constructor','ACgetItem','ACsetItem','ACruntime'];
 var GVinvalidIds = {};
 GVinvalidIdsArray.forEach(function(PVk) { GVinvalidIds[PVk] = 1; });
 var GVstrEscapes = {};
@@ -596,7 +596,7 @@ var FFtest = function FFtest(PVfilename) {
             return;
         }
         var LVtokens = FFmakeTokens(data);
-        console.log(LVtokens);
+        // console.log(LVtokens);
     });
 };
 

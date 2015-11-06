@@ -143,9 +143,11 @@ var FFtest = function FFtest(PVfilename) {
         // console.log("# Draft data");
         var LVdraft = FFformatDraft(LVbundle.MMdata5);
         var LVheader = (
-            'var autoclave = require("../autoclave.js");\n' +
-            'var GETITEM = autoclave.GETITEM;\n' +
-            'var SETITEM = autoclave.SETITEM;\n' +
+            '"use strict";\n' +
+            'var ACruntime = require("../acruntime.js");\n' +
+            'var ACgetItem = ACruntime.MMgetItem;\n' +
+            'var ACsetItem = ACruntime.MMsetItem;\n' +
+            'require = ACruntime.MMwrapRequire(require);\n' +
             '\n'
         );
         RRfs.writeFile('build/XX' + FFrootFilename(PVfilename) + '.js',

@@ -272,8 +272,8 @@ var GVrulesAndReducers = [
         function (PVcx,PVao,PVx) { return [PVcx,PVx]; },
         function (PVcx,PVao,PVx) { return [PVcx,PVx]; },
         function (PVcx,PVao,PVx) { return (
-                (PVao == "=" && PVcx instanceof Array && PVcx[0] == "GETITEM") ?
-            ['SETITEM','(',PVcx[2],',',PVcx[4],',',PVx,')'] : [PVcx,PVao,PVx]);},
+                (PVao == "=" && PVcx instanceof Array && PVcx[0] == "ACgetItem") ?
+            ['ACsetItem','(',PVcx[2],',',PVcx[4],',',PVx,')'] : [PVcx,PVao,PVx]);},
         function (PVcx,PVao,PVx) { return [PVcx,PVao,PVx];},
     [AO,'->',['=']],
         function (PVx) { return "eq"; },
@@ -329,6 +329,24 @@ var GVrulesAndReducers = [
         function (PVx) { return ""; },
         function (PVx) { return ">>>="; },
         function (PVx) { return "&gt;&gt;&gt;="; },
+    [AO,'->',['&=']],
+        function (PVx) { return "andeq"; },
+        function (PVx) { return ""; },
+        function (PVx) { return ""; },
+        function (PVx) { return "&="; },
+        function (PVx) { return "&amp;="; },
+    [AO,'->',['^=']],
+        function (PVx) { return "xoreq"; },
+        function (PVx) { return ""; },
+        function (PVx) { return ""; },
+        function (PVx) { return "^="; },
+        function (PVx) { return "^="; },
+    [AO,'->',['|=']],
+        function (PVx) { return "oreq"; },
+        function (PVx) { return ""; },
+        function (PVx) { return ""; },
+        function (PVx) { return "|="; },
+        function (PVx) { return "|="; },
     [CX,'->',[OX]],
         function (PVx) { return PVx; },
         function (PVx) { return PVx; },
@@ -615,13 +633,13 @@ var GVrulesAndReducers = [
         function (PVx,PV_,PVm) { return [PVx,'.',PVm]; },
         function (PVx,PV_,PVm) { return PVx; },
         function (PVx,PV_,PVm) { return [PVx,PV_,PVm]; },
-        function (PVx,PV_,PVm) { return ['GETITEM','(',PVx,',',('"' + PVm.MMchars + '"'),')']; },
+        function (PVx,PV_,PVm) { return ['ACgetItem','(',PVx,',',('"' + PVm.MMchars + '"'),')']; },
         function (PVx,PV_,PVm) { return [PVx,'.',PVm.MMchars]; },
     [MEMX,'->',[MEMX,'[',X,']']],
         function (PVx,PV_,PVs,PV__) { return [PVx,'[',PVs,']']; },
         function (PVx,PV_,PVs,PV__) { return [PVx,PVs]; },
         function (PVx,PV_,PVs,PV__) { return [PVx,PVs]; },
-        function (PVx,PV_,PVs,PV__) { return ['GETITEM','(',PVx,',',PVs,')']; },
+        function (PVx,PV_,PVs,PV__) { return ['ACgetItem','(',PVx,',',PVs,')']; },
         function (PVx,PV_,PVs,PV__) { return [PVx,'[',PVs,']']; },
     [ARGL,'->',[X]],
         function (PVx) { return [PVx]; },
@@ -1030,9 +1048,9 @@ var FFmakeItems = function FFmakeItems() {
             LVitem.push(LVrule[1]);
             var LVitemBody = [];
             LVitem.push(LVitemBody);
-            Array.prototype.push.apply(LVitemBody,LVruleBody.slice(0,LVj));
+            LVitemBody.push.apply(LVitemBody,LVruleBody.slice(0,LVj));
             LVitemBody.push(DOT);
-            Array.prototype.push.apply(LVitemBody,LVruleBody.slice(LVj));
+            LVitemBody.push.apply(LVitemBody,LVruleBody.slice(LVj));
             if (LVi == 0 && LVj == 1) {
                 GVacceptItem = GVitems.length;
             }
@@ -1075,6 +1093,14 @@ var FFmakeItemNumbers = function FFmakeItemNumbers() {
 
 FFmakeItemNumbers();
 
+var FFprintItemNumbers = function FFprintItemNumbers() {
+    Object.keys(GVitemNumbers).forEach(function (PVk) {
+        console.log(PVk + " #" + GVitemNumbers[PVk]);
+    });
+};
+
+// FFprintItemNumbers();
+
 // the item numbers for the closure of each symbol
 var GVitemSymbols = {};
 
@@ -1092,6 +1118,14 @@ var FFmakeItemSymbols = function FFmakeItemSymbols() {
 };
 
 FFmakeItemSymbols();
+
+var FFprintItemSymbols = function FFprintItemSymbols() {
+    Object.keys(GVitemSymbols).forEach(function (PVsymbol) {
+        console.log('# ' + PVsymbol + ' ' + GVitemSymbols[PVsymbol].join(','));
+    });
+};
+
+// FFprintItemSymbols();
 
 var FFprintItems = function FFprintItems() {
     var LVi;
@@ -1117,6 +1151,7 @@ var FFcloseItemSet = function FFcloseItemSet(PVset) {
     while (1) {
         var LVnext = {};
         Object.keys(LVcurrent).forEach(function (LVitemNum) {
+            LVitemNum |= 0;
             LVnext[LVitemNum] = 1;
             var LVsymbol = GVitemSymbolRightDot[LVitemNum];
             var LVimpliedItems = GVitemSymbols[LVsymbol];
@@ -1136,6 +1171,7 @@ var FFcloseItemSet = function FFcloseItemSet(PVset) {
 
 var FFtestItems = function FFtestItems() {
     var LVitemSet = {};
+    // console.log(GVitemNumbers['S->(O)_CS']);
     LVitemSet[GVitemNumbers['S->(O)_CS']] = 1;
     var LVclosedItemSet = FFcloseItemSet(LVitemSet);
     assert(Object.keys(LVitemSet).length != Object.keys(LVclosedItemSet).length);
