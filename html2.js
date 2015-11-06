@@ -2,11 +2,13 @@ var https = require('https');
 var fs = require('fs');
 
 var options = {
-  key: fs.readFileSync('test/fixtures/keys/agent2-key.pem'),
-  cert: fs.readFileSync('test/fixtures/keys/agent2-cert.pem')
+  key: fs.readFileSync('/home/dbp/ssl/server/my-server.key.pem'),
+  cert: fs.readFileSync('/home/dbp/ssl/server/my-server.crt.pem')
 };
 
 https.createServer(options, function (req, res) {
   res.writeHead(200);
   res.end("hello world\n");
-}).listen(443);
+  console.log("hello!\n");
+}).listen(8443);
+console.log("server running\n");
