@@ -589,6 +589,10 @@ var FFtokSym = function FFtokSym(PVinput) {
 
 var RRfs = require("fs");
 
+var FFsummary = function FFsummary(PVtokens) {
+    return "length = " + PVtokens.length;
+};
+
 var FFtest = function FFtest(PVfilename) {
     RRfs.readFile(PVfilename, 'utf8', function (err, data) {
         if (err) {
@@ -596,6 +600,7 @@ var FFtest = function FFtest(PVfilename) {
             return;
         }
         var LVtokens = FFmakeTokens(data);
+        console.log(FFsummary(LVtokens.MMtokens));
         // console.log(LVtokens);
     });
 };

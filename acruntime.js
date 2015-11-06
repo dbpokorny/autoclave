@@ -25,7 +25,7 @@ var FFgetItem = function FFgetItem(PVx, PVy) {
             return LVx;
         }
     } else {
-        var LVx = PVx[PVy + '$'];
+        var LVx = PVx[PVy.toString() + '$'];
         return LVx;
     }
 };
@@ -36,7 +36,7 @@ var FFsetItem = function FFsetItem(PVx, PVy, PVz) {
     if (GVsetOK.hasOwnProperty('#' + PVy) || (! isNaN(PVy))) {
         PVx[PVy] = PVz;
     } else {
-        PVx[PVy + '$'] = PVz;
+        PVx[PVy.toString() + '$'] = PVz;
     }
 };
 
@@ -44,7 +44,7 @@ var FFhasItem = function FFhasItem(PVx, PVy) {
     if (GVpassthrough.hasOwnProperty('#' + PVy) || (! isNaN(PVy))) {
         return PVx.hasOwnProperty(PVy);
     } else {
-        return PVx.hasOwnProperty(PVy + '$');
+        return PVx.hasOwnProperty(PVy.toString() + '$');
     }
 };
 
