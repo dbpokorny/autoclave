@@ -18,4 +18,5 @@ clean:
 	@rm -f build/*.html
 	@rm -f build/*.scope
 	@rm -f build/XX*.js
+	@rm -f build/build/XX*.js
 	@rm -f README.html
