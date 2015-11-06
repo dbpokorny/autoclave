@@ -348,7 +348,7 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
         // end number
 
         // identifier or keyword
-        if (GVletters[LVc] == 1 || LVc == '_') {
+        if (GVletters[LVc] == 1 || LVc == '_' || LVc == '$') {
             var LVj = 1;
             var LVlongestIdkw = -1;
             while (true) { // # idkwloop
@@ -357,7 +357,8 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
                     break; // # idkwloop
                 }
                 var LVd = PVinput[LVi + LVj];
-                if (GVletters[LVd] == 1 || GVdigits[LVd] == 1 || LVd == "_") {
+                if (GVletters[LVd] == 1 || GVdigits[LVd] == 1 ||
+                        LVd == '_' || LVd == '$') {
                     LVj += 1;
                     continue; // # idkwloop
                 }

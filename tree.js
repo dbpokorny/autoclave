@@ -123,11 +123,19 @@ var FFtest = function FFtest(PVfilename) {
         var LVword = LVbundle.MMword.toString().replace(RegExp(",","g")," ");
         console.log(LVword);
         console.log("# Member data");
-        var LVmember = LVbundle.MMdata4.toString().replace(RegExp(",","g")," ");
-        console.log(LVmember);
-        console.log("# Draft data");
-        var LVdraft = FFformatDraft(LVbundle.MMdata5);
-        console.log(LVdraft);
+        var LVmember0 = LVbundle.MMdata4.toString().replace(RegExp(",","g")," ");
+        var LVmembers = [];
+        LVmember0.split(' ').forEach(function (LVx) {
+            if (LVx.length > 0) {
+                LVmembers.push(LVx);
+                if (LVx[0] != '.') {
+                    LVmembers.push('\n');
+                }
+            }
+        });
+        console.log(LVmembers.join(''));
+        // console.log("# Draft data");
+        // console.log(FFformatDraft(LVbundle.MMdata5));
     });
 };
 

@@ -7,43 +7,43 @@ var util = require('util');
 
 var DOT = '(O)';
 
-var PR = 'PR'; // program
-var PA2 = 'PA2'; // parts
-var PA = 'PA'; // part
-var CS = 'CS'; // compound statement
-var S2 = 'S2'; // statements
-var S = 'S'; // statement
-var CO = 'CO'; // condition
-var X = 'X'; // expression
-var AO = 'AO'; // assignment operator
-var CX = 'CX'; // conditional expression
-var OX = 'OX'; // or expression
-var NX = 'NX'; // and expression
-var BOX = 'BOX'; // bitwise or expression
-var BXX = 'BXX'; // bitwise xor expression
-var BNX = 'BNX'; // bitwise and expression
-var QX = 'QX'; // equality expression
-var QO = 'QO'; // equality operator
-var RX = 'RX'; // relational expression
-var RO = 'RO'; // relational operator
-var SHX = 'SHX'; // shift expression
-var SHO = 'SHO'; // shift operator
-var AX = 'AX'; // additive expression
+var PR   = 'PR';   // program
+var PA2  = 'PA2';  // parts
+var PA   = 'PA';   // part
+var CS   = 'CS';   // compound statement
+var S2   = 'S2';   // statements
+var S    = 'S';    // statement
+var CO   = 'CO';   // condition
+var X    = 'X';    // expression
+var AO   = 'AO';   // assignment operator
+var CX   = 'CX';   // conditional expression
+var OX   = 'OX';   // or expression
+var NX   = 'NX';   // and expression
+var BOX  = 'BOX';  // bitwise or expression
+var BXX  = 'BXX';  // bitwise xor expression
+var BNX  = 'BNX';  // bitwise and expression
+var QX   = 'QX';   // equality expression
+var QO   = 'QO';   // equality operator
+var RX   = 'RX';   // relational expression
+var RO   = 'RO';   // relational operator
+var SHX  = 'SHX';  // shift expression
+var SHO  = 'SHO';  // shift operator
+var AX   = 'AX';   // additive expression
 var MULX = 'MULX'; // multiplicative expression
-var MO = 'MO'; // multiplicative operator
-var UX = 'UX'; // unary expression
+var MO   = 'MO';   // multiplicative operator
+var UX   = 'UX';   // unary expression
 var MEMX = 'MEMX'; // member expression
 var ARGL = 'ARGL'; // argument list
 var ALIT = 'ALIT'; // array literal
 var ELTL = 'ELTL'; // element list
 var OLIT = 'OLIT'; // object literal
-var FL = 'FL'; // field list
+var FL   = 'FL';   // field list
 var LITF = 'LITF'; // literal field
-var PX = 'PX'; // primary expression
-var FX = 'FX'; // function expression
-var AF = 'AF'; // anonymous function
-var NF = 'NF'; // named function
-var PL = 'PL'; // parameter list
+var PX   = 'PX';   // primary expression
+var FX   = 'FX';   // function expression
+var AF   = 'AF';   // anonymous function
+var NF   = 'NF';   // named function
+var PL   = 'PL';   // parameter list
 
 var FFformatTokenRef;
 var FFdeepLength;
@@ -53,6 +53,29 @@ var FFbuildForHTML;
 
 // Fit small syntax trees onto a single line
 var DCsingleLineLimit = 300;
+var FFsquish = function FFsquish(PVx) {
+    if (FFdeepLength(PVx) < DCsingleLineLimit) { FFzapDivTags(PVx); }
+    return PVx;
+};
+
+var FFformatParam = function FFformatParam (PVt) {
+    return '<a id="' + PVt.MMchars + '-' + PVt.MMoffset + '"><span class="hiParam">' + PVt.MMchars + '</span></a>';
+};
+
+var FFformatDef = function FFformatDef(PVt) {
+    return '<a id="' + PVt.MMchars + '-' + PVt.MMoffset + '">' + PVt.MMchars + '</a>';
+};
+
+var FFformatVar = function FFformatVar(PVt) {
+    if (PVt.MMlink != 'global') {
+        var LVslash = PVt.MMlink.indexOf('/');
+        assert(LVslash > 0);
+        var LVoffset = PVt.MMlink.slice(LVslash + 1);
+        return ('<a href="#' + PVt.MMchars + '-' + LVoffset + '"><span class="hiNormal">' + PVt.MMchars + '</span></a>');
+    } else {
+        return PVt.MMchars;
+    }
+}
 
 // the first rule of GVrulesAndReducers must be [PR,'->',[*]] for some [*]
 var GVrulesAndReducers = [
@@ -181,37 +204,37 @@ var GVrulesAndReducers = [
         function (PV_,PV__) { return ''; },
         function (PV_,PV__) { return ''; },
         function (PV_,PV__) { return ['break',';','\n','***INDENT***']; },
-        function (PV_,PV__) { return ['<div>','***INDENT***','break',';','</div>']; },
+        function (PV_,PV__) { return ['<div>','***INDENT***','<span class="hiStatement">break</span>',';','</div>']; },
     [S,'->',['continue',';']],
         function (PV_,PV__) { return 'continue'; },
         function (PV_,PV__) { return ''; },
         function (PV_,PV__) { return ''; },
         function (PV_,PV__) { return ['continue',';','\n','***INDENT***']; },
-        function (PV_,PV__) { return ['<div>','***INDENT***','continue',';','</div>']; },
+        function (PV_,PV__) { return ['<div>','***INDENT***','<span class="hiStatement">continue</span>',';','</div>']; },
     [S,'->',['return',';']],
         function (PV_,PV__) { return 'return'; },
         function (PV_,PV__) { return ''; },
         function (PV_,PV__) { return ''; },
         function (PV_,PV__) { return ['return',';','\n','***INDENT***']; },
-        function (PV_,PV__) { return ['<div>','***INDENT***','return',';','</div>']; },
+        function (PV_,PV__) { return ['<div>','***INDENT***','<span class="hiStatement">return</span>',';','</div>']; },
     [S,'->',['return',X,';']],
         function (PV_,PVx,PV__) { return ['return',PVx]; },
         function (PV_,PVx,PV__) { return PVx; },
         function (PV_,PVx,PV__) { return PVx; },
         function (PV_,PVx,PV__) { return ['return',PVx,';','\n','***INDENT***']; },
-        function (PV_,PVx,PV__) { return ['<div>','***INDENT***','return',PVx,';','</div>']; },
+        function (PV_,PVx,PV__) { return ['<div>','***INDENT***','<span class="hiStatement">return</span>',PVx,';','</div>']; },
     [S,'->',['var','NAME',';']],
         function (PV_,PVn,PV__) { return ['var',PVn]; },
         function (PV_,PVn,PV__) { return ['(','def', FFformatTokenRef(PVn),')','\n','***INDENT***']; },
         function (PV_,PVn,PV__) { return ''; },
         function (PV_,PVn,PV__) { return ['var',PVn.MMchars,';','\n','***INDENT***']; },
-        function (PV_,PVn,PV__) { return ['<div>','***INDENT***','<span class="hiIdentifier">','var','</span>',PVn.MMchars,';','</div>']; },
+        function (PV_,PVn,PV__) { return ['<div>','***INDENT***','<span class="hiIdentifier">','var','</span>',FFformatDef(PVn),';','</div>']; },
     [S,'->',['var','NAME','=',X,';']],
         function (PV_,PVn,PV__,PVx,PV___) { return ['var',PVn,'=',PVx]; },
         function (PV_,PVn,PV__,PVx,PV___) { return ['(','def', FFformatTokenRef(PVn),PVx,')','\n','***INDENT***']; },
         function (PV_,PVn,PV__,PVx,PV___) { return PVx; },
         function (PV_,PVn,PV__,PVx,PV___) { return ['var',PVn.MMchars,'=',PVx,';','\n','***INDENT***']; },
-        function (PV_,PVn,PV__,PVx,PV___) { return ['<div>','***INDENT***','<span class="hiIdentifier">','var','</span>',PVn.MMchars,'=',PVx,';','</div>']; },
+        function (PV_,PVn,PV__,PVx,PV___) { return ['<div>','***INDENT***','<span class="hiIdentifier">','var','</span>',FFformatDef(PVn),'=',PVx,';','</div>']; },
     [S,'->',['throw',X,';']],
         function (PV_,PVx,PV__) { return ['throw',PVx]; },
         function (PV_,PVx,PV__) { return PVx; },
@@ -615,29 +638,25 @@ var GVrulesAndReducers = [
         function (PV_,PVx,PV__) { return PVx; },
         function (PV_,PVx,PV__) { return PVx; },
         function (PV_,PVx,PV__) { return ['[',PVx,']']; },
-        function (PV_,PVx,PV__) { if (FFdeepLength(PVx) < DCsingleLineLimit) { FFzapDivTags(PVx); }
-            return ['[',PVx,'</div>',']']; },
+        function (PV_,PVx,PV__) { return FFsquish(['[',PVx,']','</div>']); },
     [ALIT,'->',['[',ELTL,',',']']],
         function (PV_,PVx,PV__,PV___) { return ['[',PVx,']']; },
         function (PV_,PVx,PV__,PV___) { return PVx; },
         function (PV_,PVx,PV__,PV___) { return PVx; },
         function (PV_,PVx,PV__,PV___) { return ['[',PVx,']']; },
-        function (PV_,PVx,PV__,PV___) { if (FFdeepLength(PVx) < DCsingleLineLimit) { FFzapDivTags(PVx); }
-            return ['[',PVx,'</div>',']']; },
+        function (PV_,PVx,PV__,PV___) { return FFsquish(['[',PVx,']','</div>']); },
     [ELTL,'->',[X]],
         function (PVx) { return [PVx]; },
         function (PVx) { return [PVx]; },
         function (PVx) { return [PVx]; },
         function (PVx) { return [PVx]; },
-        function (PVx) { if (FFdeepLength(PVx) < DCsingleLineLimit) { FFzapDivTags(PVx); }
-            return ['<div>','***INDENT***',PVx]; },
+        function (PVx) { return FFsquish(['<div>','***INDENT***',PVx]); },
     [ELTL,'->',[ELTL,',',X]],
         function (PVeltl,PV_,PVx) { return Array.prototype.concat(PVeltl,[PVx]); },
         function (PVeltl,PV_,PVx) { return Array.prototype.concat(PVeltl,[PVx]); },
         function (PVeltl,PV_,PVx) { return Array.prototype.concat(PVeltl,[PVx]); },
         function (PVeltl,PV_,PVx) { return Array.prototype.concat(PVeltl,[',',PVx]); },
-        function (PVeltl,PV_,PVx) { if (FFdeepLength(PVx) < DCsingleLineLimit) { FFzapDivTags(PVx); }
-            return Array.prototype.concat(PVeltl,[',','</div>','<div>','***INDENT***',PVx]); },
+        function (PVeltl,PV_,PVx) { return FFsquish(Array.prototype.concat(PVeltl,[',','</div>','<div>','***INDENT***',PVx])); },
     [OLIT,'->',['{','}']],
         function (PV_,PV__) { return "{}"; },
         function (PV_,PV__) { return ""; },
@@ -649,15 +668,13 @@ var GVrulesAndReducers = [
         function (PV_,PVfl,PV__) { return PVfl; },
         function (PV_,PVfl,PV__) { return PVfl; },
         function (PV_,PVfl,PV__) { return ['{','\n','***INDENT***',PVfl,'\n','***INDENT***','}']; },
-        function (PV_,PVfl,PV__) { if (FFdeepLength(PVfl) < DCsingleLineLimit) { FFzapDivTags(PVfl); }
-            return ['{',PVfl,'</div>','}']; },
+        function (PV_,PVfl,PV__) { return FFsquish(['{',PVfl,'}','</div>']); },
     [OLIT,'->',['{',FL,',','}']],
         function (PV_,PVfl,PV__,PV___) { return ['{',PVfl,'}']; },
         function (PV_,PVfl,PV__,PV___) { return PVfl; },
         function (PV_,PVfl,PV__,PV___) { return PVfl; },
         function (PV_,PVfl,PV__,PV___) { return ['{','\n','***INDENT***',PVfl,'\n','***INDENT***','}']; },
-        function (PV_,PVfl,PV__,PV___) { if (FFdeepLength(PVfl) < DCsingleLineLimit) { FFzapDivTags(PVfl); }
-            return ['{',PVfl,'</div>','}']; },
+        function (PV_,PVfl,PV__,PV___) { return FFsquish(['{',PVfl,'}','</div>']); },
     [FL,'->',[LITF]],
         function (PVx) { return [PVx]; },
         function (PVx) { return [PVx]; },
@@ -711,7 +728,7 @@ var GVrulesAndReducers = [
         function (PVx) { return ['(','use', FFformatTokenRef(PVx),')','\n','***INDENT***']; },
         function (PVx) { return ""; },
         function (PVx) { return PVx.MMchars; },
-        function (PVx) { return PVx.MMchars; },
+        function (PVx) { return FFformatVar(PVx); },
     [PX,'->',['NUMBER']],
         function (PVx) { return PVx; },
         function (PVx) { return ""; },
@@ -789,13 +806,13 @@ var GVrulesAndReducers = [
         function (PVn) { return [FFformatTokenRef(PVn)]; },
         function (PVn) { return ""; },
         function (PVn) { return [PVn.MMchars]; },
-        function (PVn) { return [PVn.MMchars]; },
+        function (PVn) { return [FFformatParam(PVn)]; },
     [PL,'->',['NAME',',',PL]],
         function (PVn,PV_,PVl) { return Array.prototype.concat([PVn],PVl); },
         function (PVn,PV_,PVl) { return Array.prototype.concat([FFformatTokenRef(PVn)],PVl); },
         function (PVn,PV_,PVl) { return ""; },
         function (PVn,PV_,PVl) { return Array.prototype.concat([PVn.MMchars,','],PVl); },
-        function (PVn,PV_,PVl) { return Array.prototype.concat([PVn.MMchars,','],PVl); },
+        function (PVn,PV_,PVl) { return Array.prototype.concat([FFformatParam(PVn),','],PVl); },
 ];
 
 // Format a reference to a token (see scope / LVdata3)
@@ -827,7 +844,7 @@ FFzapDivTags = function FFzapDivTags(PVx) {
         if (PVe instanceof Array) {
             var LVi;
             for (LVi = 0; LVi < PVe.length; LVi += 1) {
-                if (PVe[LVi] == '<div>' || PVe[LVi] == '</div>' || PVe[LVi] == '***INDENT***') {
+                if (PVe[LVi].slice(0,5) == '<div>' || PVe[LVi] == '</div>' || PVe[LVi] == '***INDENT***') {
                     PVe[LVi] = '';
                 } else {
                     FFzdtHelper(PVe[LVi]);

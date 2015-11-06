@@ -275,8 +275,6 @@ var FFtest = function FFtest(PVfilename) {
         var LVsyntax = LVparse.MMsyntax;
         var LVtokens = LVparse.MMtokens;
         var LVsymbols = LVparse.MMsymbols;
-        console.log(PVdata);
-        console.log("# Scope data");
         var LVwalkResult = FFwalkTree(LVsyntax.MMdata3);
         if (LVwalkResult.MMrc != 0) {
             console.log("walkTree failed");
@@ -284,7 +282,9 @@ var FFtest = function FFtest(PVfilename) {
             return;
         }
         var LVscopeTree = LVwalkResult.MMscopeTree;
-        console.log(FFformatScope(LVscopeTree));
+        // console.log(FFformatScope(LVscopeTree));
+        var LVscopeFilename = 'build/' + FFrootFilename(PVfilename) + '.scope';
+        RRfs.writeFile(LVscopeFilename,FFformatScope(LVscopeTree));
         if (LVwalkResult.MMundef.length > 0 ) {
             console.log("# Undefined variables");
             console.log(LVwalkResult.MMundef);
@@ -307,12 +307,14 @@ var FFtest = function FFtest(PVfilename) {
         // Generate HTML
         var LVparse2 = RRtable.MMtestParse2(LVsymbols, LVtokens);
         assert(LVparse2.MMrc == 0);
-        var LVhtml = FFformatHTML(LVparse2.MMhtmlTree);
-        // console.log(LVhtml);
+        var LVhtml = FFformatHTML(LVparse2.MMhtml);
         var LVheader = ('<html><head>' +
                 '<style>' +
+                'a { text-decoration: none;}' +
                 '.hiFunction {color:#40ffff;}' +
                 '.hiIdentifier {color:#40ffff;}' +
+                '.hiNormal {color:#ffffff;}' +
+                '.hiParam {border: 1px solid green;}' +
                 '.hiStatement {color:#ffff60;}' +
                 '.hiRepeat {color:#ffff60;}' +
                 '</style></head>' +
