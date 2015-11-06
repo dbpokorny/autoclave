@@ -277,7 +277,7 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
         }
         // end handle + or -
 
-        // punct
+        // punctuation
         if (GVpunctInitChars[LVc] == 1) {
             // Determine extent of punctuation
             var LVj = 1;
@@ -375,35 +375,35 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
         }
         // end number
 
-        // identifier or keyword
+        // identifier (keyword, variable)
         if (GVletters[LVc] == 1 || LVc == '_' || LVc == '$') {
             var LVj = 1;
-            var LVlongestIdkw = -1;
-            while (true) { // # idkwloop
-                LVlongestIdkw = LVj;
+            var LVlongestId = -1;
+            while (true) { // # idloop
+                LVlongestId = LVj;
                 if (LVi + LVj == PVinput.length) {
-                    break; // # idkwloop
+                    break; // # idloop
                 }
                 var LVd = PVinput[LVi + LVj];
                 if (GVletters[LVd] == 1 || GVdigits[LVd] == 1 ||
                         LVd == '_' || LVd == '$') {
                     LVj += 1;
-                    continue; // # idkwloop
+                    continue; // # idloop
                 }
-                break; // # idkwloop
+                break; // # idloop
             }
-            LVj = LVlongestIdkw;
-            var LVidkwCand = PVinput.slice(LVi, LVi + LVj);
-            if (GVinvalidIds[LVidkwCand] == 1) {
+            LVj = LVlongestId;
+            var LVidCand = PVinput.slice(LVi, LVi + LVj);
+            if (GVinvalidIds[LVidCand] == 1) {
                 return {
                     MMrc : DCinvalidIdError, MMerror : "Invalid identifier: "
-                    + LVidkwCand, MMlineno : LVlineno, MMcolno : LVcolno
+                    + LVidCand, MMlineno : LVlineno, MMcolno : LVcolno
                 };
             }
             LVtokens.push({
-                MMtype : (GVkeywords[LVidkwCand] == 1 ?  DCkeywordTypeCode :
+                MMtype : (GVkeywords[LVidCand] == 1 ?  DCkeywordTypeCode :
                           DCidTypeCode), MMlineno : LVlineno, MMcolno : LVcolno,
-                       MMlength : LVj, MMoffset : LVi, MMchars : LVidkwCand
+                       MMlength : LVj, MMoffset : LVi, MMchars : LVidCand
             });
             LVcolno += LVj; LVi += LVj;
             continue; // #mainloop

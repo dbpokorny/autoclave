@@ -129,9 +129,15 @@ var FFwalkTree = function FFwalkTree(PVtree) {
     var LVstack = [LVscopeTree];
     var LVparams = null;
     var LVscopeStack = [['undefined']];
-    var LVdefStack = [{'#console':'global','#module':'global','#Array':'global',
-        '#Math':'global','#Object':'global','#undefined':'global',
-        '#process':'global','#require':'global','#RegExp':'global'}];
+    var LVdefStack = [{'#console':'global',
+        '#module':'global',
+        '#Array':'global',
+        '#Math':'global',
+        '#Object':'global',
+        '#undefined':'global',
+        '#process':'global',
+        '#require':'global',
+        '#RegExp':'global'}];
     var LVtokenRefLinks = {};
     // compile a list of undefined variables
     var LVundef = [];
