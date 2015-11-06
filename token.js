@@ -11,6 +11,23 @@ var assert = require("assert");
 // 2 token type codes: comment, newline, whitespace, punctuation, integer,
 //   floating-point, string, identifier, keyword
 
+var DChexDecode = { '0' : 1, '1' : 1, '2' : 1, '3' : 1, '4' : 1, '5' : 1, '6' : 1,
+    '7' : 1, '8' : 1, '9' : 1, 'a' : 1, 'b' : 1, 'c' : 1, 'd' : 1, 'e' : 1, 'f' :
+        1, 'A' : 1, 'B' : 1, 'C' : 1, 'D' : 1, 'E' : 1, 'F' : 1 };
+
+// return -1 on error
+var FFdecodeUnicodeEscape = function FFdecodeUnicodeEscape(LVx) {
+    assert(typeof LVx == 'string');
+    assert(LVx.length == 4);
+    if (DChexDecode[LVx[0]] == 1 &&
+        DChexDecode[LVx[1]] == 1 &&   
+        DChexDecode[LVx[2]] == 1 &&   
+        DChexDecode[LVx[3]] == 1) {
+        return unescape('%u' + LVx);
+    }
+    return -1;
+}
+
 var DCcommentTypeCode = 'DCcommentTypeCode';
 var DCnewlineTypeCode = 'DCnewlineTypeCode';
 var DCwhitespaceTypeCode = 'DCwhitespaceTypeCode';
@@ -46,7 +63,7 @@ var GVkeywordStrings = ['for', 'while', 'continue', 'break', 'return', 'var',
     'instanceof'];
 var GVkeywords = {};
 GVkeywordStrings.forEach(function(PVk) { GVkeywords[PVk] = 1; });
-var GVinvalidArray = [ 'case', 'class', 'catch', 'const', 'debugger', 'default',
+var GVinvalidIdsArray = [ 'case', 'class', 'catch', 'const', 'debugger', 'default',
     'delete', 'do', 'export', 'extends', 'finally', 'import', 'in', 'let', 'new',
     'super', 'switch', 'this', 'try', 'with', 'yield',
     'assign', 'create', 'defineProperties', 'defineProperty', 'freeze',
@@ -54,7 +71,7 @@ var GVinvalidArray = [ 'case', 'class', 'catch', 'const', 'debugger', 'default',
     'getPrototypeOf', '__defineGetter__', '__defineSetter__', '__lookupGetter__',
     '__lookupSetter__', 'constructor'];
 var GVinvalidIds = {};
-GVinvalidArray.forEach(function(PVk) { GVinvalidIds[PVk] = 1; });
+GVinvalidIdsArray.forEach(function(PVk) { GVinvalidIds[PVk] = 1; });
 var GVstrEscapes = {};
 GVstrEscapes["n"] = "\n";
 GVstrEscapes["r"] = "\r";
@@ -382,8 +399,8 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
         }
         // end identifier or keyword
 
-        // single-quoted string
-        if (LVc == "'") {
+        // single-quoted or double-quoted string
+        if (LVc == "'" || LVc == '"') {
             var LVj = 1;
             var LVstrVal = []; // the string value is LVstrVal.join("")
             var LVlongestStr = -1; // length of string literal if valid
@@ -396,7 +413,7 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
                 if (LVd == '\n') {
                     break; // #strloop (error)
                 }
-                if (LVd == "'") {
+                if (LVd == LVc) {
                     LVj += 1;
                     LVlongestStr = LVj;
                     break; // #strloop
@@ -408,13 +425,24 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
                     }
                     var LVe = PVinput[LVi + LVj];
                     var LVeVal;
-                    if (GVstrEscapes.hasOwnProperty(LVe)) {
-                        LVeVal = GVstrEscapes[LVe];
+                    if (LVe == 'u') {
+                        LVj += 5;
+                        if (LVi + LVj >= PVinput.length) {
+                            break; // #strloop (error)
+                        }
+                        LVeVal = FFdecodeUnicodeEscape(PVinput.slice(LVi+LVj-4,LVi+LVj));
+                        if (LVeVal == -1) {
+                            break; // #strloop (error)
+                        }
                     } else {
-                        LVeVal = LVe;
+                        if (GVstrEscapes.hasOwnProperty(LVe)) {
+                            LVeVal = GVstrEscapes[LVe];
+                        } else {
+                            LVeVal = LVe;
+                        }
+                        LVj += 1;
                     }
                     LVstrVal.push(LVeVal);
-                    LVj += 1;
                     continue; // #strloop
                 }
 
@@ -442,69 +470,9 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
         }
         // end single-quoted string
 
-        // double-quoted string
-        if (LVc == '"') {
-            var LVj = 1;
-            var LVstrVal = []; // the string value is LVstrVal.join("")
-            var LVlongestStr = -1; // length of string literal if valid
-            while (true) { // #strloop
-                assert(LVi + LVj <= PVinput.length);
-                if (LVi + LVj == PVinput.length) {
-                    break; // #strloop (error)
-                }
-                var LVd = PVinput[LVi + LVj];
-                if (LVd == '\n') {
-                    break; // #strloop (error)
-                }
-                if (LVd == '"') {
-                    LVj += 1;
-                    LVlongestStr = LVj;
-                    break; // #strloop
-                }
-                if (LVd == '\\') {
-                    LVj += 1;
-                    if (LVi + LVj == PVinput.length) {
-                        break; // #strloop (error)
-                    }
-                    var LVe = PVinput[LVi + LVj];
-                    var LVeVal;
-                    if (GVstrEscapes.hasOwnProperty(LVe)) {
-                        LVeVal = GVstrEscapes[LVe];
-                    } else {
-                        LVeVal = LVe;
-                    }
-                    LVstrVal.push(LVeVal);
-                    LVj += 1;
-                    continue; // #strloop
-                }
-
-                if (GVstrChars.hasOwnProperty(LVd)) {
-                    LVstrVal.push(LVd);
-                    LVj += 1;
-                    continue; // #strloop
-                }
-                break; // #strloop (error)
-            }
-            if (LVlongestStr == -1) {
-                return {
-                    MMrc : DCstringError, MMerror : "error scanning string",
-                    MMlineno : LVlineno, MMcolno : LVcolno
-                };
-            }
-            LVj = LVlongestStr;
-            LVtokens.push({
-                MMtype : DCstrTypeCode, MMlineno : LVlineno, MMcolno : LVcolno,
-                MMlength : LVj, MMoffset : LVi, MMchars :
-                PVinput.slice(LVi,LVi+LVj), MMstrVal : LVstrVal.join("")
-            });
-            LVcolno += LVj; LVi += LVj;
-            continue; // #mainloop
-        }
-        // end double-quoted string
-
         return {
             MMrc : DCscanError, MMerror : "error scanning input", MMlineno :
-            LVlineno, MMcolno : LVcolno
+            LVlineno, MMcolno : LVcolno, MMchars : PVinput.slice(LVi,LVi+10) + '...'
         };
     } // end #mainloop
 };
@@ -546,6 +514,7 @@ var FFtestStringScan = function FFtestStringScan() {
     assert(FFmakeTokens('"foo').MMrc == DCstringError);
     assert(FFmakeTokens('"foo\n').MMrc == DCstringError);
     assert(FFmakeTokens('e.__defineGetter__').MMrc == DCinvalidIdError);
+    assert(FFmakeTokens('"\\uabcd"').MMrc == 0);
 };
 
 FFtestStringScan();
