@@ -1,0 +1,33 @@
+{
+  "name": "autoclave",
+  "version": "0.0.1",
+  "description": "Run Your JavaScript",
+  "main": "main.js",
+  "dependencies": {
+    "gift": "~0.6.0",
+    "github": "~0.2.3",
+    "ws": "^0.8.0",
+    "request": "^2.55.0",
+    "sqlite3": "^3.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dbpokorny/autoclave.git"
+  },
+  "keywords": [
+    "parser",
+    "compiler"
+  ],
+  "author": "dbpokorny <dbpokorny@gmail.com>",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/dbpokorny/autoclave/issues"
+  },
+  "homepage": "https://github.com/dbpokorny/autoclave",
+  "scripts": {
+    "main": "node main.js"
+  },
+  "devDependencies": {
+    "coveralls": "^2.11.2"
+  }
+}

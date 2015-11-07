@@ -2,3 +2,4 @@
 expression but "(x-1)" is not
 2. "keys" means "Object.keys" and this function is intercepted so as to present
 the illusion of not executing in a sandbox
+3. npm install

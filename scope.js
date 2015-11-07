@@ -267,44 +267,60 @@ FFassertWalk("var e = function e(a,b) {" +
         "var f = function f(b,c) { ; }; };", DCdefError);
 
 var DCfileError = -10;
-var DCparseError = -20;
-var DCdefUseError = -30;
+var DCscopeParseError = -20;
+var DCwalkTreeError = -30;
 var DCundefVarError = -40;
 
-var FFtest = function FFtest(PVfilename) {
+// PVfilename - name of input file
+//
+// Calls PVk(PVerror, PVscope)
+//
+// PVscope.tree - tree of def-use data
+// PVscope.html - html data
+var FFtest = function FFtest(PVfilename,PVk) {
     assert(typeof PVfilename == "string");
-    RRfs.readFile(PVfilename, 'utf8', function (PVerr, PVdata) {
-        if (PVerr) {
-            console.log("Unable to read file: " + PVfilename);
-            return DCfileError;
+    RRfs.readFile(PVfilename, 'utf8', function (PVerror, PVdata) {
+        if (PVerror) {
+            // console.log("Unable to read file: " + PVfilename);
+            return PVk({
+                MMrc : DCfileError,
+                MMmsg : "Unable to read file: " + PVfilename
+            }, null);
         }
         var LVparse = FFscopeParse(PVdata);
         if (LVparse.MMrc != 0) {
-            console.log("FFscopeParse failed");
-            console.log(LVparse);
-            return DCparseError;
+            // console.log("FFscopeParse failed");
+            // console.log(LVparse);
+            return PVk({
+                MMrc : DCscopeParseError,
+                MMmsg : "scopeParse failed",
+                MMdata : LVparse
+            }, null);
         }
         var LVsyntax = LVparse.MMsyntax;
         var LVtokens = LVparse.MMtokens;
         var LVsymbols = LVparse.MMsymbols;
         var LVwalkResult = FFwalkTree(LVsyntax.MMdata3);
         if (LVwalkResult.MMrc != 0) {
-            console.log("walkTree failed");
-            console.log(LVwalkResult);
-            return DCdefUseError;
+            // console.log("walkTree failed");
+            // console.log(LVwalkResult);
+            return PVk({
+                MMrc : LVwalkResult.MMrc,
+                MMmsg : "walkTree failed",
+                MMdata : LVwalkResult
+            }, null);
         }
-        var LVscopeTree = LVwalkResult.MMscopeTree;
-        // console.log(FFformatScope(LVscopeTree));
-        var LVscopeFilename = 'build/' + FFrootFilename(PVfilename) + '.scope';
-        RRfs.writeFile(LVscopeFilename,FFformatScope(LVscopeTree));
         if (LVwalkResult.MMundef.length > 0 ) {
-            console.log("# Undefined variables");
-            console.log(LVwalkResult.MMundef);
-            // return DCundefVarError;
+            // console.log("# Undefined variables");
+            // console.log(LVwalkResult.MMundef);
+            return PVk({
+                MMrc : DCundefVarError,
+                MMmsg : "undefined variables",
+                MMdata : LVwalkResult
+            }, null);
         }
         var LVtokenRefLinks = LVwalkResult.MMtokenRefLinks;
         // console.log(LVtokenRefLinks);
-        // console.log(JSON.stringify(LVscopeTree));
         
         // annotate tokens with links
         var LVi;
@@ -337,16 +353,64 @@ var FFtest = function FFtest(PVfilename) {
                 'font-family:Courier; ' +
                 'font-size:14px;">');
         var LVfooter = '</body></html>';
-        var LVoutFilename = 'build/' + FFrootFilename(PVfilename) + '.html';
-        RRfs.writeFile(LVoutFilename,LVheader + LVhtml + LVfooter);
+        PVk(null, {
+            MMtree : LVwalkResult.MMscopeTree,
+            MMhtml : LVheader + LVhtml + LVfooter
+        });
     });
 };
 
+// Given a path to a file, make all intermediate directories if needed
+var FFmakeDirs = function FFmakeDirs (PVpath) {
+    var LVslashes = []; // indexes of slashes in PVpash
+    var LVi;
+    for (LVi = 0; LVi < PVpath.length; LVi += 1) {
+        if (PVpath[LVi] == '/') {
+            LVslashes.push(LVi);
+        }
+    }
+    for (LVi = 0; LVi < LVslashes.length; LVi += 1) {
+        var LVpartial = PVpath.slice(0,LVslashes[LVi])
+        if (! RRfs.existsSync(LVpartial)) {
+            RRfs.mkdirSync(LVpartial);
+        }
+    }
+};
+
+// Build a bridge to the file
+var FFbridgeFile = function FFbridgeFile(PVpath, PVdata) {
+    RRfs.writeFile(PVpath, PVdata,
+        function (PVerror) {
+            if (PVerror) {
+                FFmakeDirs(PVpath);
+                RRfs.writeFile(PVpath, PVdata);
+            }
+        }
+    );
+};
+
+var FFmain = function FFmain(PVfile) {
+    var PVfile = process.argv[2];
+    FFtest(PVfile, function (PVerror, PVscope) {
+        if (PVerror) {
+            console.log(PVerror);
+            return;
+        }
+        var LVscopePath = 'acbuild/scope/' + FFrootFilename(PVfile);
+        var LVscopeData = FFformatScope(PVscope.MMtree);
+        FFbridgeFile(LVscopePath, LVscopeData);
+        var LVhtmlPath = 'acbuild/html/' + FFrootFilename(PVfile) + '.html';
+        var LVhtmlData = PVscope.MMhtml;
+        FFbridgeFile(LVhtmlPath, LVhtmlData);
+    });
+}
+
 if (require.main === module && process.argv.length >= 3) {
-    FFtest(process.argv[2]);
+    FFmain(process.argv[2]);
 }
 
 module.exports = {
-    'FFscopeParse': FFscopeParse
+    MMscopeParse: FFscopeParse,
+    MMbridgeFile: FFbridgeFile
 };
 

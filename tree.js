@@ -150,7 +150,7 @@ var FFtest = function FFtest(PVfilename) {
             'require = ACruntime.MMwrapRequire(require);\n' +
             '\n'
         );
-        RRfs.writeFile('build/XX' + FFrootFilename(PVfilename) + '.js',
+        RRfs.writeFile('acbuild/XX' + FFrootFilename(PVfilename) + '.js',
                 LVheader + LVdraft);
         // console.log(LVdraft);
     });

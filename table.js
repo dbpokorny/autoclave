@@ -49,7 +49,7 @@ var FFformatTokenRef;
 var FFdeepLength;
 var FFzapDivTags;
 var FFhtmlEntities;
-var FFbuildForHTML;
+var FFforHTML;
 
 // Fit small syntax trees onto a single line
 var DCsingleLineLimit = 300;
@@ -164,49 +164,49 @@ var GVrulesAndReducers = [
         function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return PVcs; },
         function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return PVcs; },
         function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return ['for ( ; ; )',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return FFbuildForHTML([],[],[],PVcs); },
+        function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return FFforHTML([],[],[],PVcs); },
     [S,'->',['for','(',';',';',X,')',CS]],
         function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return ['for(;;',PVx,')',PVcs]; },
         function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return ['for ( ; ;',PVx,')',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return FFbuildForHTML([],[],PVx,PVcs); },
+        function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return FFforHTML([],[],PVx,PVcs); },
     [S,'->',['for','(',';',X,';',')',CS]],
         function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return ['for(;',PVx,';)',PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return ['for ( ;',PVx,'; )', PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return FFbuildForHTML([],PVx,[],PVcs); },
+        function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return FFforHTML([],PVx,[],PVcs); },
     [S,'->',['for','(',';',X,';',X,')',CS]],
         function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return ['for(;',PVx,';',PVx2,')',PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return ['for ( ;',PVx,';',PVx2,')',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return FFbuildForHTML([],PVx,PVx2,PVcs); },
+        function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return FFforHTML([],PVx,PVx2,PVcs); },
     [S,'->',['for','(',X,';',';',')',CS]],
         function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return ['for(',PVx,';;)',PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return ['for (',PVx,'; ; )',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return FFbuildForHTML(PVx,[],[],PVcs); },
+        function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return FFforHTML(PVx,[],[],PVcs); },
     [S,'->',['for','(',X,';',';',X,')',CS]],
         function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return ['for(',PVx,';;',PVx2,')',PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return ['for (',PVx,'; ;',PVx2,')',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return FFbuildForHTML(PVx,[],PVx2,PVcs); },
+        function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return FFforHTML(PVx,[],PVx2,PVcs); },
     [S,'->',['for','(',X,';',X,';',')',CS]],
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return ['for(',PVx,';',PVx2,';)',PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return ['for (',PVx,';',PVx2,';)',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return FFbuildForHTML(PVx,PVx2,[],PVcs); },
+        function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return FFforHTML(PVx,PVx2,[],PVcs); },
     [S,'->',['for','(',X,';',X,';',X,')',CS]],
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return ['for(',PVx,';',PVx2,';',PVx3,')',PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return [PVx,PVx2,PVx3,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return [PVx,PVx2,PVx3,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return ['for (',PVx,';',PVx2,';',PVx3,')',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return FFbuildForHTML(PVx,PVx2,PVx3,PVcs); },
+        function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return FFforHTML(PVx,PVx2,PVx3,PVcs); },
     [S,'->',['break',';']],
         function (PV_,PV__) { return 'break'; },
         function (PV_,PV__) { return ''; },
@@ -901,7 +901,7 @@ FFhtmlEntities = function FFhtmlEntities(PVx) {
 };
 
 // Build the "for" statement HTML syntax tree
-FFbuildForHTML = function FFbuildForHTML(PVa,PVb,PVc,PVbody) {
+FFforHTML = function FFforHTML(PVa,PVb,PVc,PVbody) {
     var LVresult = ['<div>','***INDENT***','<span class="hiRepeat">','for','</span>','('];
     if (PVa.length > 0) {
         LVresult.push(PVa);

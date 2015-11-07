@@ -1,22 +1,21 @@
 .PHONY: clean
 
-all: build/XXtoken.js build/XXtable.js build/XXtree.js
+all: acbuild/js/token.js acbuild/js/table.js acbuild/js/tree.js
 
 README.html: README.md
 	ruby -e "require 'github/markup'; puts GitHub::Markup.render('README.md',File.read('README.md'))" > README.html
 
-build/XXtoken.js: token.js tree.js
+acbuild/js/token.js: token.js tree.js
 	node tree.js token.js
 
-build/XXtable.js: table.js tree.js
+acbuild/js/table.js: table.js tree.js
 	node tree.js table.js
 
-build/XXtree.js: tree.js
+acbuild/js/tree.js: tree.js
 	node tree.js tree.js
 
 clean:
-	@rm -f build/*.html
-	@rm -f build/*.scope
-	@rm -f build/XX*.js
-	@rm -f build/build/XX*.js
+	@rm -f acbuild/html/*.html
+	@rm -f acbuild/scope/*
+	@rm -f acbuild/js/*.js
 	@rm -f README.html
