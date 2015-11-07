@@ -3,7 +3,8 @@
 var GVpassthroughStrings = ['apply', 'argv','concat','filter', 'forEach',
     'hasOwnProperty', 'indexOf', 'join', 'keys', 'log','length', 'main', 'map',
     'max', 'min', 'pop', 'prototype', 'push', 'readFile', 'reduce', 'reduceRight',
-    'replace', 'reverse', 'slice', 'sort','splice','split','toString','writeFile'
+    'replace', 'resolve', 'reverse', 'slice', 'sort','splice','split','toString',
+    'writeFile'
 ];
 var GVpassthrough = {};
 GVpassthroughStrings.forEach(function (PVk) { GVpassthrough['#' + PVk] = 1; });
@@ -62,11 +63,7 @@ var FFkeys = function FFkeys (PVobj) {
 
 var FFwrapRequire = function FFwrapRequire(PVreq) {
     var LVnewReq = function (PVx) {
-        if (PVx.slice(0,2) == "./") {
-            return PVreq("./XX" + PVx.slice(2));
-        } else {
-            return PVreq(PVx);
-        }
+        return PVreq(PVx);
     };
     LVnewReq.main = PVreq.main;
     return LVnewReq;

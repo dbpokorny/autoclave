@@ -3,6 +3,7 @@
 var RRtoken = require("./token.js");
 var RRtable = require("./table.js");
 var assert = require("assert");
+var path = require("path");
 
 var FFtree = function FFtree(PVinput) {
     var LVtokSym = RRtoken.MMtokSym(PVinput);
@@ -142,15 +143,16 @@ var FFtest = function FFtest(PVfilename) {
         // console.log(LVmembers.join(''));
         // console.log("# Draft data");
         var LVdraft = FFformatDraft(LVbundle.MMdata5);
+        var LVruntimePath = path.resolve('.') + '/runtime.js';
         var LVheader = (
             '"use strict";\n' +
-            'var ACruntime = require("../acruntime.js");\n' +
+            'var ACruntime = require("' + LVruntimePath + '");\n' +
             'var ACgetItem = ACruntime.MMgetItem;\n' +
             'var ACsetItem = ACruntime.MMsetItem;\n' +
             'require = ACruntime.MMwrapRequire(require);\n' +
             '\n'
         );
-        RRfs.writeFile('acbuild/XX' + FFrootFilename(PVfilename) + '.js',
+        RRfs.writeFile('acbuild/js/' + FFrootFilename(PVfilename) + '.js',
                 LVheader + LVdraft);
         // console.log(LVdraft);
     });

@@ -95,7 +95,7 @@ var GVservices = {
     '</div>' +
     '<div><span class="hiComment">// this is a comment</span></div>' +
     "<p>Hello World</p>" +
-    "<div>XXX</div>" +
+    "<div>abc</div>" +
     '<div id="foobar" foo="bar">foobar</div>' +
     "<div><span>ab</span><span>cd</span></div>" +
     '<div id="IDinfobox" class="CLinfobox">' +
