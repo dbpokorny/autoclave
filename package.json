@@ -4,8 +4,9 @@
   "description": "Run Your JavaScript",
   "main": "main.js",
   "dependencies": {
-    "gift": "~0.6.0",
-    "github": "~0.2.3",
+    "escape-html": "^1.0.3",
+    "gift": "^0.6.0",
+    "github": "^0.2.3",
     "ws": "^0.8.0",
     "request": "^2.55.0",
     "sqlite3": "^3.0.5"

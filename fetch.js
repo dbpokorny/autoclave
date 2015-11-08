@@ -1,6 +1,6 @@
 // 1. User provides a git repo URL to fetch and cache. URL must be in the form of
-//    ssh://git@github.com/user/repo.git. It will be cloned to
-//    ghcache/user/repo. In addition, an entry is made in GVrepoCache.
+//    git@github.com/user/repo.git. It will be cloned to ghcache/user/repo. In
+//    addition, an entry is made in GVrepoCache.
 //    1.1 walk the repo file tree. For all files ending in '.js', an entry is
 //        made in GVinputFileRepo, which maps file URL (a file URL looks like
 //        ssh://git@github.com/user/repo/path/to/file.js) to its git repo URL.
@@ -53,7 +53,7 @@ var GVjsFiles = {};
 // returns PVk(error, repo)
 var FFgitURL = function FFgitURL(PVurl, PVk) {
     if (GVrepoCache.hasOwnProperty(PVurl)) {
-        // console.log('cache of ' + PVurl + ' is ' + GVrepoCache[PVurl]);
+        console.log('cache of ' + PVurl + ' is ' + GVrepoCache[PVurl]);
         return PVk(0, GVrepoObjectCache[PVurl]);
     }
     // "https://git@github.com:dbpokorny/autoclave.git"
@@ -68,7 +68,7 @@ var FFgitURL = function FFgitURL(PVurl, PVk) {
     assert(LVghUser.length > 0);
     assert(RegExp("^[-a-zA-Z0-9_]{2,25}$").test(LVghUser));
     assert(LVghRepo.length > 0);
-    assert(RegExp("^[a-zA-Z0-9_]{2,25}$").test(LVghRepo));
+    assert(RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVghRepo));
     var LVrepoPath = "ghcache/" + LVghUser + "/" + LVghRepo;
     var LVgit = git(LVrepoPath);
     LVgit.status(function (PVe, PVstatus) {
@@ -79,13 +79,14 @@ var FFgitURL = function FFgitURL(PVurl, PVk) {
                     return PVk(PVe2, null);
                 } else {
                     console.log('cloned ' + PVurl + ' to ' + LVrepoPath);
-                    console.log(Object.keys(PVrepo))
                     GVrepoCache[PVurl] = LVrepoPath;
                     GVrepoObjectCache[PVurl] = PVrepo;
                     return PVk(0, PVrepo);
                 }
             });
         } else {
+            console.log('loaded local cache from disk for ' + PVurl + ' at ' +
+                LVrepoPath);
             GVrepoCache[PVurl] = LVrepoPath;
             GVrepoObjectCache[PVurl] = LVgit;
             return PVk(0, LVgit);
@@ -93,7 +94,7 @@ var FFgitURL = function FFgitURL(PVurl, PVk) {
     });
 };
 
-// Call PVf on all files in the repository named at PVroot
+// Call PVf on all file paths in the repository named at PVroot
 // skip "node_modules"
 var FFwalkTree = function FFwalkTree(PVroot, PVf) {
     var FFwtHelper = function FFwtHelper(PVpath) {
@@ -118,5 +119,6 @@ var FFwalkTree = function FFwalkTree(PVroot, PVf) {
 
 module.exports = {
     MMgitURL : FFgitURL,
-    MMwalkTree : FFwalkTree
+    MMwalkTree : FFwalkTree,
+    MMrepoCache : GVrepoCache
 };

@@ -15,10 +15,11 @@ acbuild/js/tree.js: tree.js
 	node tree.js tree.js
 
 clean:
+	@rm -rf acbuild/error/ghcache
 	@rm -rf acbuild/html/ghcache
-	@rm -f  acbuild/html/*.html
 	@rm -rf acbuild/scope/ghcache
-	@rm -f  acbuild/scope/*
 	@rm -rf acbuild/js/ghcache
+	@rm -f  acbuild/html/*.html
+	@rm -f  acbuild/scope/*
 	@rm -f  acbuild/js/*.js
 	@rm -f  README.html

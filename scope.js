@@ -7,10 +7,12 @@
 
 "use strict";
 
+var assert = require("assert");
+var util = require("util");
+
 var RRtoken = require("./token.js");
 var RRtable = require("./table.js");
 var FFformatTokenRef = RRtable.MMformatTokenRef;
-var assert = require("assert");
 
 var FFscopeParse = function FFscopeParse(PVinput) {
     var LVtokSym = RRtoken.MMtokSym(PVinput);
@@ -249,7 +251,7 @@ var FFwalkTree = function FFwalkTree(PVtree) {
 var RRfs = require('fs');
 
 var FFrootFilename = function FFrootFilename(PVfilename) {
-    var LVdotIndex = PVfilename.indexOf('.');
+    var LVdotIndex = PVfilename.lastIndexOf('.');
     assert(LVdotIndex > 0);
     return PVfilename.slice(0,LVdotIndex);
 };
@@ -271,13 +273,56 @@ var DCscopeParseError = -20;
 var DCwalkTreeError = -30;
 var DCundefVarError = -40;
 
+// Check whether or not the named file follows the scope rules
+// PVfilename - name of input file
+//
+// Calls PVk(PVerror)
+var FFtest = function FFtest(PVfilename, PVk) {
+    assert(typeof PVfilename == "string");
+    RRfs.readFile(PVfilename, 'utf8', function (PVerror, PVdata) {
+        if (PVerror) {
+            return PVk({
+                MMrc : DCfileError,
+                MMmsg : "Unable to read file: " + PVfilename
+            });
+        }
+        var LVparse = FFscopeParse(PVdata);
+        if (LVparse.MMrc != 0) {
+            return PVk({
+                MMrc : DCscopeParseError,
+                MMmsg : "scopeParse failed",
+                MMdata : LVparse
+            });
+        }
+        var LVsyntax = LVparse.MMsyntax;
+        var LVwalkResult = FFwalkTree(LVsyntax.MMdata3);
+        if (LVwalkResult.MMrc != 0) {
+            return PVk({
+                MMrc : LVwalkResult.MMrc,
+                MMmsg : "walkTree failed",
+                MMdata : LVwalkResult
+            });
+        }
+        if (LVwalkResult.MMundef.length > 0 ) {
+            return PVk({
+                MMrc : DCundefVarError,
+                MMmsg : "undefined variables",
+                MMdata : LVwalkResult,
+                MMdata2 : LVwalkResult.MMundef
+            });
+        }
+        PVk(null);
+    });
+};
+
+
 // PVfilename - name of input file
 //
 // Calls PVk(PVerror, PVscope)
 //
 // PVscope.tree - tree of def-use data
 // PVscope.html - html data
-var FFtest = function FFtest(PVfilename,PVk) {
+var FFfullTest = function FFfullTest(PVfilename, PVk) {
     assert(typeof PVfilename == "string");
     RRfs.readFile(PVfilename, 'utf8', function (PVerror, PVdata) {
         if (PVerror) {
@@ -390,8 +435,7 @@ var FFbridgeFile = function FFbridgeFile(PVpath, PVdata) {
 };
 
 var FFmain = function FFmain(PVfile) {
-    var PVfile = process.argv[2];
-    FFtest(PVfile, function (PVerror, PVscope) {
+    FFfullTest(PVfile, function (PVerror, PVscope) {
         if (PVerror) {
             console.log(PVerror);
             return;
@@ -403,7 +447,26 @@ var FFmain = function FFmain(PVfile) {
         var LVhtmlData = PVscope.MMhtml;
         FFbridgeFile(LVhtmlPath, LVhtmlData);
     });
-}
+};
+
+// Calls PVk( list of files written )
+var FFbatch = function FFbatch(PVfile, PVk) {
+    FFfullTest(PVfile, function (PVerror, PVscope) {
+        if (PVerror) {
+            var LVerrorPath = 'acbuild/error/' + FFrootFilename(PVfile);
+            var LVerrorData = util.format(PVerror);
+            FFbridgeFile(LVerrorPath, LVerrorData);
+            return PVk([LVerrorPath]);
+        }
+        var LVscopePath = 'acbuild/scope/' + FFrootFilename(PVfile);
+        var LVscopeData = FFformatScope(PVscope.MMtree);
+        FFbridgeFile(LVscopePath, LVscopeData);
+        var LVhtmlPath = 'acbuild/html/' + FFrootFilename(PVfile) + '.html';
+        var LVhtmlData = PVscope.MMhtml;
+        FFbridgeFile(LVhtmlPath, LVhtmlData);
+        return PVk([LVscopePath, LVhtmlPath]);
+    });
+};
 
 if (require.main === module && process.argv.length >= 3) {
     FFmain(process.argv[2]);
@@ -411,6 +474,8 @@ if (require.main === module && process.argv.length >= 3) {
 
 module.exports = {
     MMscopeParse: FFscopeParse,
-    MMbridgeFile: FFbridgeFile
+    MMbridgeFile: FFbridgeFile,
+    MMbatch : FFbatch,
+    MMtest : FFtest
 };
 
