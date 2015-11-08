@@ -1,15 +1,18 @@
 // Load the http module to create an http server.
-var http = require('http');
-var fs = require('fs');
-var escapeHtml = require('escape-html');
+var RRhttp = require('http');
+var RRfs = require('fs');
+var RRescapeHtml = require('escape-html');
 
 var assert = require('assert');
 
 var RRfetch = require('./fetch.js');
 
+// "page mode" is the string that is the first element of the array of a value in
+// GVget or GVpost. It can be one of: "static", "k", or "args".
+
 var GVget = {
-    "/foo" : ["text/plain","<b>ee</b>"],
-    "/infobox.js" : ["application/javascript",
+    "/foo" : ["static", "text/plain","<b>ee</b>"],
+    "/infobox.js" : ["static", "application/javascript",
 "var FFinfoboxLog = function FFinfoboxLog(PVm) {\n" +
 "    var LVe = document.createElement('div');\n" +
 "    LVe.innerHTML = PVm;\n" +
@@ -31,7 +34,7 @@ var GVget = {
 "        },'json'\n" + 
 "    );\n" +
 "};\n"],
-    "/" :["text/html",
+    "/" :["static", "text/html",
 "<!doctype html><html>" +
     "<head>" + 
         '<script type="application/javascript" src="/jquery-2.1.4.js"></script>' +
@@ -59,33 +62,33 @@ var GVget = {
 ]
 };
 
-fs.readFile('./favicon.ico', function (err, data) {
+RRfs.readFile('./favicon.ico', function (err, data) {
     if (err) {
         console.log("error reading favicon");
         return;
     }
-    GVget["/favicon.ico"] = ["image/x-icon",data];
+    GVget["/favicon.ico"] = ["static","image/x-icon",data];
 });
 
-fs.readFile('./jquery-2.1.4.js', function (err, data) {
+RRfs.readFile('./jquery-2.1.4.js', function (err, data) {
     if (err) {
         console.log("error reading jquery");
         return;
     }
-    GVget["/jquery-2.1.4.js"] = ["application/javascript",data];
+    GVget["/jquery-2.1.4.js"] = ["static","application/javascript",data];
 });
 
-// map from github user name to array of repo names
+// map from github user name to array of repo names owned by user
 var GVuserRepos = {};
 
 // list of 'user/repo' github repos in local cache
 var GVrepoList = [];
 
 // list of github users who have at least one repo in the cache
-var GVghUsers = fs.readdirSync('ghcache/');
+var GVghUsers = RRfs.readdirSync('ghcache/');
 
 GVghUsers.forEach(function (PVuser) {
-    GVuserRepos[PVuser] = fs.readdirSync('ghcache/' + PVuser + '/');
+    GVuserRepos[PVuser] = RRfs.readdirSync('ghcache/' + PVuser + '/');
     GVuserRepos[PVuser].forEach(function (PVrepo) {
         GVrepoList.push(PVuser + '/' + PVrepo);
     });
@@ -93,13 +96,13 @@ GVghUsers.forEach(function (PVuser) {
 
 RRfetch.MMwalkTree('acbuild/scope', function (PVscopeFile) {
     assert(PVscopeFile.slice(0,7) == 'acbuild');
-    GVget[PVscopeFile.slice(7)] = function (PVk) {
-        PVk(['text/plain', fs.readFileSync(PVscopeFile)]);
-    };
+    GVget[PVscopeFile.slice(7)] = ["k", function (PVk) {
+        PVk(['static', 'text/plain', RRfs.readFileSync(PVscopeFile)]);
+    }];
 });
 
 var FFmakeMainPage = function FFmakeMainPage() {
-    GVget['/'] = ["text/html",
+    GVget['/'] = ["static", "text/html",
     '<!doctype html>' +
     '<html>' +
         '<head>' + 
@@ -125,11 +128,11 @@ var FFmakeMainPage = function FFmakeMainPage() {
             'saepius.                                                           </div>' +
             '<button onclick="FFdemoPost();">click me</button>' +
             '<h2>List of Repositories</h2>' +
-            GVrepoList.map(function (PVx) { return '<div>' + escapeHtml(PVx) + '</div>'; }).join(' ') +
-            '<h2>List of Services</h2>' +
+            GVrepoList.map(function (PVx) { return '<div>' + RRescapeHtml(PVx) + '</div>'; }).join(' ') +
+            '<h2>List of GET Services</h2>' +
             Object.keys(GVget).map(function (PVsvcName) {
                 return ('<div>' + '<a href="' + escape(PVsvcName) + '">' +
-                    escapeHtml(PVsvcName) + '</a>' + '</div>'); }).join(' ') +
+                    RRescapeHtml(PVsvcName) + '</a>' + '</div>'); }).join(' ') +
         '</body>' +
     '</html>'
     ];
@@ -140,11 +143,11 @@ FFmakeMainPage();
 var GVerror = [];
 
 RRfetch.MMwalkTree('acbuild/error', function (PVerrorFile) {
-    GVerror.push([PVerrorFile, fs.readFileSync(PVerrorFile)]);
+    GVerror.push([PVerrorFile, RRfs.readFileSync(PVerrorFile)]);
 });
 
 var FFmakeReport = function FFmakeReport() {
-    GVget['/report'] = ["text/html",
+    GVget['/report'] = ["static", "text/html",
     '<!doctype html><html>' +
         '<head>' + 
             '<script type="application/javascript" src="/jquery-2.1.4.js"></script>' +
@@ -165,8 +168,8 @@ var FFmakeReport = function FFmakeReport() {
             '<table>' +
                 '<tr>' + '<th>path</th>' + '<th>error</th>' + '</tr>' +
                 GVerror.map(function (PVx) {
-                    return ('<tr>' + '<td>' + escapeHtml(PVx[0]) + '</td>' +
-                        '<td>' + escapeHtml(PVx[1]) + '</td>' + '</tr>');
+                    return ('<tr>' + '<td>' + RRescapeHtml(PVx[0]) + '</td>' +
+                        '<td>' + RRescapeHtml(PVx[1]) + '</td>' + '</tr>');
                 }).join(' ') +
             '</table>' +
         '</body>' +
@@ -176,14 +179,33 @@ var FFmakeReport = function FFmakeReport() {
 
 FFmakeReport();
 
+// Return a url arg dict. The arguments have a '#' prefix since they are provided
+// by the user
+var FFparseUrlArgs = function FFparseUrlArgs(PVarglist) {
+    var LVresult = {};
+    PVarglist.forEach(function (PVstr) {
+        var LVeq = PVstr.indexOf('=');
+        if (LVeq > 0) {
+            var LVargName = PVstr.slice(0,LVeq);
+            if (RegExp("^[a-zA-Z0-9]{1,25}$").test(LVargName)) {
+                var LVargValue = PVstr.slice(LVeq + 1);
+                LVresult['#' + LVargName] = decodeURIComponent(LVargValue);
+            }
+        }
+    });
+    return LVresult;
+};
+
+// GVpost maps a pathname to a function that takes the body of the ajax request
+// and a continuation k that receives the return value
 var GVpost = {};
 
 GVpost['/'] = function (PVbody, PVk) {
     console.log('the body is: ' + PVbody);
-    PVk({hello:'world', 10:20});
+    return PVk({hello:'world', 10:20});
 };
 
-var FFserver = http.createServer(function (PVrequest, PVresponse) {
+var FFserver = RRhttp.createServer(function (PVrequest, PVresponse) {
     // console.log(Object.keys(PVrequest));
     // console.log(PVrequest.domain);
     console.log(PVrequest.method + " " + PVrequest.url);
@@ -207,17 +229,35 @@ var FFserver = http.createServer(function (PVrequest, PVresponse) {
         });
         // console.log(Object.keys(PVrequest));
     } else if (GVget.hasOwnProperty(PVrequest.url)) {
-        var LVservice = GVget[PVrequest.url];
-        if (! (LVservice instanceof Array)) {
-            LVservice(function (PVx) {
-                GVget[PVrequest.url] = PVx;
+        var LVurl = PVrequest.url;
+        var LVq = LVurl.indexOf('?');
+        var LVargs = [];
+        if (LVq > 0) {
+            LVargs = FFparseUrlArgs(LVurl.slice(LVq + 1).split('&'));
+            LVurl = LVurl.slice(0,LVq);
+        }
+        var LVservice = GVget[LVurl];
+        if (LVservice[0] == "k") {
+            var LVf = LVservice[1];
+            return LVf(function (PVx) {
+                assert(PVx[0] == "static");
+                assert(PVx.length == 3);
+                GVget[LVurl] = PVx;
+                PVresponse.writeHead(200, {"Content-Type": PVx[1]});
+                PVresponse.end(PVx[2]);
+            });
+        } else if (LVservice[0] == "static") {
+            PVresponse.writeHead(200, {"Content-Type": LVservice[1]});
+            PVresponse.end(LVservice[2]);
+            return;
+        } else if (LVservice[0] == "args") {
+            var LVf = LVservice[1];
+            LVf(LVargs, function (PVx) {
                 PVresponse.writeHead(200, {"Content-Type": PVx[0]});
                 PVresponse.end(PVx[1]);
+                return;
             });
-            return;
         }
-        PVresponse.writeHead(200, {"Content-Type": LVservice[0]});
-        PVresponse.end(LVservice[1]);
     } else {
         // console.log(PVrequest);
         PVresponse.writeHead(404, {"Content-Type": "text/plain"});

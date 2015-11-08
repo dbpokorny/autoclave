@@ -1,18 +1,22 @@
 // 1. User provides a git repo URL to fetch and cache. URL must be in the form of
-//    git@github.com/user/repo.git. It will be cloned to ghcache/user/repo. In
-//    addition, an entry is made in GVrepoCache.
-//    1.1 walk the repo file tree. For all files ending in '.js', an entry is
-//        made in GVinputFileRepo, which maps file URL (a file URL looks like
-//        ssh://git@github.com/user/repo/path/to/file.js) to its git repo URL.
-//        This is the list of candidate files to translate. In addition it is
-//        added to GVinputFiles which maps file URL to path to local file.
+//    git@github.com:user/repo.git. It is cloned to ghcache/user/repo and an entry
+//    is added to GVrepoCache. Walk the repo file tree, and for all
+//    files ending in '.js', make an entry in GVjsFiles, which maps file URL (a
+//    file URL looks like git@github.com:user/repo/path/to/file.js) to its git
+//    repo URL. This is the list of candidate files to translate. Also make an
+//    entry in GVinputFiles.
 //
 // 2. User queries:
 //    2.1 has the following git URL been cached yet?
-//    2.1 has the local git repo been walked yet?
-//    2.2 list the files in a directory
-//    2.3 list all files in the tree (git ls-files)
-//    2.4 for a given javascript file, is it suitable for translation?
+//    2.2 has the local git repo been walked yet?
+//    2.3 does the repo need 'npm install'?
+//        2.3.1 for each package in package.json, is it ok to run out of the box
+//              or does it need an interface that disables / rate limits functions
+//              that could annoy or pose a security risk
+//    2.4 given a GIT url and a pathname to a directory in the repository, list
+//    the files it contains
+//    2.5 list all files in the tree (git ls-files)
+//    2.6 for a given javascript file, is it suitable for translation?
 //
 // 2. User selects a JavaScript file to translate. The result will be stored in
 //    acbuild/user/repo/path/to/file.js. In addition, an entry is made in
@@ -33,9 +37,6 @@ var assert = require('assert');
 // map file URL to path to local file
 var GVinputFiles = {};
 
-// map javascript file URL to git repo URL
-var GVinputFileRepo = {};
-
 // map file URL to path to translated file in acbuild/
 var GVfileCache = {};
 
@@ -45,7 +46,7 @@ var GVrepoCache = {};
 // map git URL to repo object
 var GVrepoObjectCache = {};
 
-// map git URL to list of pathnames to JS files it contains
+// map git URL to list of paths to ".js" files in the local cache
 var GVjsFiles = {};
 
 // Fetches a git URL (if necessary) and caches it
