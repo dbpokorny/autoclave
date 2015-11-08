@@ -100,26 +100,27 @@ RRfetch.MMwalkTree('acbuild/scope', function (PVscopeFile) {
 
 var FFmakeMainPage = function FFmakeMainPage() {
     GVget['/'] = ["text/html",
-        "<!doctype html><html>" +
-            "<head>" + 
-                '<script type="application/javascript" src="/jquery-2.1.4.js"></script>' +
-                '<script type="application/javascript" src="/infobox.js"></script>' +
-            "<style>" +
-                "body {background-color:#808080; color:white; font-family: Courier;}" +
-                "h1 {color:red;}" +
-                ".CLinfobox {" +
-                    "border:1px solid black;" +
-                    "background-color: lightblue;" +
-                    "width: 150px;" +
-                    "height: 150px;" +
-                    "overflow: scroll;" +
-                "}" +
-                ".hiFunction {color:#40ffff;}" +
-                ".hiComment {color:#80a0ff;}" +
-            "</style>" +
-        "</head>" +
+    '<!doctype html>' +
+    '<html>' +
+        '<head>' + 
+            '<script type="application/javascript" src="/jquery-2.1.4.js"></script>' +
+            '<script type="application/javascript" src="/infobox.js"></script>' +
+            '<style>' +
+                'body {background-color:#808080; color:white; font-family: Courier;}' +
+                'h1 {color:red;}' +
+                '.CLinfobox {' +
+                    'border:1px solid black;' +
+                    'background-color: lightblue;' +
+                    'width: 150px;' +
+                    'height: 150px;' +
+                    'overflow: scroll;' +
+                '}' +
+                '.hiFunction {color:#40ffff;}' +
+                '.hiComment {color:#80a0ff;}' +
+            '</style>' +
+        '</head>' +
         '<body>' +
-            "<h1>autoclave.io</h1>" +
+            '<h1>autoclave.io</h1>' +
             '<div>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam  ' +
             'saepius.                                                           </div>' +
             '<button onclick="FFdemoPost();">click me</button>' +
@@ -129,11 +130,51 @@ var FFmakeMainPage = function FFmakeMainPage() {
             Object.keys(GVget).map(function (PVsvcName) {
                 return ('<div>' + '<a href="' + escape(PVsvcName) + '">' +
                     escapeHtml(PVsvcName) + '</a>' + '</div>'); }).join(' ') +
-        "</body></html>"
+        '</body>' +
+    '</html>'
     ];
 };
 
 FFmakeMainPage();
+
+var GVerror = [];
+
+RRfetch.MMwalkTree('acbuild/error', function (PVerrorFile) {
+    GVerror.push([PVerrorFile, fs.readFileSync(PVerrorFile)]);
+});
+
+var FFmakeReport = function FFmakeReport() {
+    GVget['/report'] = ["text/html",
+    '<!doctype html><html>' +
+        '<head>' + 
+            '<script type="application/javascript" src="/jquery-2.1.4.js"></script>' +
+            '<script type="application/javascript" src="/infobox.js"></script>' +
+            '<style>' +
+                'table {' +
+                    'border: 1px solid black;' +
+                '}' +
+                'th {' +
+                    'border: 1px solid black;' +
+                '}' +
+                'td {' +
+                    'border: 1px solid black;' +
+                '}' +
+            '</style>' +
+        '</head>' +
+        '<body>' +
+            '<table>' +
+                '<tr>' + '<th>path</th>' + '<th>error</th>' + '</tr>' +
+                GVerror.map(function (PVx) {
+                    return ('<tr>' + '<td>' + escapeHtml(PVx[0]) + '</td>' +
+                        '<td>' + escapeHtml(PVx[1]) + '</td>' + '</tr>');
+                }).join(' ') +
+            '</table>' +
+        '</body>' +
+    '</html>'
+    ];
+};
+
+FFmakeReport();
 
 var GVpost = {};
 
