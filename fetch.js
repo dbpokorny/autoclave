@@ -32,7 +32,7 @@
 
 var RRfs = require('fs');
 var RRgit = require('gift');
-var RRscope = require('./scope.js');
+var RRtree = require('./tree.js');
 
 var assert = require('assert');
 
@@ -149,7 +149,7 @@ var FFtest = function FFtest(PVgitURL) {
             FFwalkTreeSync(GVrepoCache[PVgitURL], function (PVx) {
                 if (PVx.slice(PVx.length - 3) == ".js") {
                     console.log('javascript file found, checking...');
-                    RRscope.MMbatch(PVx, function (PVfiles) {
+                    RRtree.MMfullBatch(PVx, function (PVfiles) {
                         console.log('wrote files: ' + PVfiles);
                     });
                 }

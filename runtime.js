@@ -26,7 +26,7 @@ var FFgetItem = function FFgetItem(PVx, PVy) {
             return LVx;
         }
     } else {
-        var LVx = PVx[PVy.toString() + '$'];
+        var LVx = PVx[PVy.toString() + '`'];
         return LVx;
     }
 };
@@ -37,7 +37,7 @@ var FFsetItem = function FFsetItem(PVx, PVy, PVz) {
     if (GVsetOK.hasOwnProperty('#' + PVy) || (! isNaN(PVy))) {
         PVx[PVy] = PVz;
     } else {
-        PVx[PVy.toString() + '$'] = PVz;
+        PVx[PVy.toString() + '`'] = PVz;
     }
 };
 
@@ -45,7 +45,7 @@ var FFhasItem = function FFhasItem(PVx, PVy) {
     if (GVpassthrough.hasOwnProperty('#' + PVy) || (! isNaN(PVy))) {
         return PVx.hasOwnProperty(PVy);
     } else {
-        return PVx.hasOwnProperty(PVy.toString() + '$');
+        return PVx.hasOwnProperty(PVy.toString() + '`');
     }
 };
 
@@ -57,7 +57,7 @@ var FFhasItemCurry = function FFhasItemCurry(PVx) {
 // keys == Object.keys
 var FFkeys = function FFkeys (PVobj) {
     return Object.keys(PVobj).filter(
-        function (PVx) { return (! isNaN(PVx)) || PVx[PVx.length - 1] == '$'; }).map(
+        function (PVx) { return (! isNaN(PVx)) || PVx[PVx.length - 1] == '`'; }).map(
         function (PVx) { return isNaN(PVx) ? PVx.slice(0,PVx.length - 1) : PVx; });
 };
 
@@ -88,7 +88,7 @@ var FFfileUrlToLocal = function (PVurl) {
             MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVfilename
         };
     }
-    return { MMrc : 0, MMpath = "acbuild/js/" + PVurl.slice(LVlastColon + 1) };
+    return { MMrc : 0, MMpath : "acbuild/js/" + PVurl.slice(LVlastColon + 1) };
 }
 
 // FFwrapRequire is called with the module's "require()" function and returns a
@@ -102,7 +102,7 @@ var FFfileUrlToLocal = function (PVurl) {
 //     acbuild/js/user/repo/path/to/file.js
 var FFwrapRequire = function FFwrapRequire(PVreq) {
     var LVnewReq = function (PVx) {
-        var LVpathResult = FFfileUrltoLocal(PVx);
+        var LVpathResult = FFfileUrlToLocal(PVx);
         if (LVpathResult.MMrc == 0) {
             var LVpath = LVpathResult.MMpath;
             return require(LVpath);

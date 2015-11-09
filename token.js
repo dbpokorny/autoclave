@@ -76,7 +76,7 @@ var GVkeywords = {};
 GVkeywordStrings.forEach(function(PVk) { GVkeywords[PVk] = 1; });
 var GVinvalidIdsArray = [ 'case', 'class', 'catch', 'const', 'debugger', 'default',
     'delete', 'do', 'export', 'extends', 'finally', 'import', 'in', 'let', 'new',
-    'super', 'switch', 'this', 'try', 'with', 'yield',
+    'prototype', 'super', 'switch', 'this', 'try', 'with', 'yield',
     'assign', 'create', 'defineProperties', 'defineProperty', 'freeze',
     'getNotifier', 'getOwnPropertyDescriptor', 'getOwnPropertySymbols',
     'getPrototypeOf', '__defineGetter__', '__defineSetter__', '__lookupGetter__',
@@ -594,14 +594,17 @@ var FFsummary = function FFsummary(PVtokens) {
 };
 
 var FFtest = function FFtest(PVfilename) {
-    RRfs.readFile(PVfilename, 'utf8', function (err, data) {
-        if (err) {
-            console.log(err);
+    RRfs.readFile(PVfilename, 'utf8', function (PVerror, PVdata) {
+        if (PVerror) {
+            console.log(PVerror);
             return;
         }
-        var LVtokens = FFmakeTokens(data);
-        console.log(FFsummary(LVtokens.MMtokens));
-        // console.log(LVtokens);
+        var LVresult = FFmakeTokens(PVdata);
+        if (LVresult.MMrc) {
+            console.log(LVresult);
+            return;
+        }
+        console.log(FFsummary(LVresult.MMtokens));
     });
 };
 

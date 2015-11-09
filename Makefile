@@ -16,6 +16,7 @@ acbuild/js/tree.js: tree.js
 
 clean:
 	@rm -rf acbuild/error/ghcache
+	@rm -rf acbuild/jserror/ghcache
 	@rm -rf acbuild/html/ghcache
 	@rm -rf acbuild/scope/ghcache
 	@rm -rf acbuild/js/ghcache
