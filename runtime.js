@@ -2,7 +2,7 @@
 
 var GVpassthroughStrings = ['apply', 'argv','concat','filter', 'forEach',
     'hasOwnProperty', 'indexOf', 'join', 'keys', 'log','length', 'main', 'map',
-    'max', 'min', 'pop', 'prototype', 'push', 'readFile', 'reduce', 'reduceRight',
+    'max', 'min', 'pop', 'push', 'readFile', 'reduce', 'reduceRight',
     'replace', 'resolve', 'reverse', 'slice', 'sort','splice','split','toString',
     'writeFile'
 ];
@@ -61,8 +61,52 @@ var FFkeys = function FFkeys (PVobj) {
         function (PVx) { return isNaN(PVx) ? PVx.slice(0,PVx.length - 1) : PVx; });
 };
 
+var DCfileUrlError = -10;
+var DCfileUrlErrorMsg = "Cannot read file URL";
+var DCfileUrlSegmentError = -20;
+var DCfileUrlSegmentErrorMsg = "Invalid pathname segment";
+// Given a github file URL, return the path to the local (it may or may not exist)
+var FFfileUrlToLocal = function (PVurl) {
+    var LVlastColon = PVurl.lastIndexOf(':');
+    if (LVlastColon <= 0) { return {
+        MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg, MMdata : PVurl }; }
+    var LVpathSegments = PVurl.slice(LVlastColon + 1).split('/');
+    var LVi;
+    for (LVi = 0; LVi < LVpathSegments.length - 1; LVi += 1) {
+        if (! RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVpathSegments[LVi])) {
+            return { MMrc : DCfileUrlSegmentError,
+                MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVpathSegments[LVi]
+            };
+        }
+    }
+    var LVfilename = LVpathSegments[-1];
+    var LVfilenameRoot = LVfilename.slice(0,LVfilename.length - 3);
+    var LVfilenameExt = LVfilename.slice(LVfilename.length - 3);
+    if (! (LVfilenameExt == ".js" &&
+            RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVfilenameRoot))) {
+        return { MMrc : DCfileUrlSegmentError,
+            MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVfilename
+        };
+    }
+    return { MMrc : 0, MMpath = "acbuild/js/" + PVurl.slice(LVlastColon + 1) };
+}
+
+// FFwrapRequire is called with the module's "require()" function and returns a
+// function to replace it (a.k.a. "decorator" from Python). The new function
+// intercepts a "git file URL" which looks like
+//
+//     git@github.com:user/repo/path/to/file.js
+//
+// In this case, it is resolved to a local path like
+//
+//     acbuild/js/user/repo/path/to/file.js
 var FFwrapRequire = function FFwrapRequire(PVreq) {
     var LVnewReq = function (PVx) {
+        var LVpathResult = FFfileUrltoLocal(PVx);
+        if (LVpathResult.MMrc == 0) {
+            var LVpath = LVpathResult.MMpath;
+            return require(LVpath);
+        }
         return PVreq(PVx);
     };
     LVnewReq.main = PVreq.main;

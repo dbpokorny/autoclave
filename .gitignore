@@ -1,6 +1,4 @@
 acbuild/*
 ghcache/*
 node_modules/*
-table2.js
-token2.js
-tree2.js
+req.js
