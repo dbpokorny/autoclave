@@ -7,6 +7,51 @@ var RRfs = require('fs');
 var RRpath = require("path");
 var RRutil = require("util");
 
+var FFformatHtml = function FFformatHtml(PVtree) {
+    var LVpreIndent = FFdeepFlatten(PVtree);
+    var LVindented = [];
+    var LVi;
+    var LVindentLevel = 0;
+    for (LVi = 0; LVi < LVpreIndent.length; LVi += 1) {
+        var LVt = LVpreIndent[LVi];
+        if (LVt == '{' || LVt == '[') {
+            LVindentLevel += 1;
+            LVindented.push(LVt);
+        } else if (LVt == '}' || LVt == ']') {
+            LVindentLevel -= 1;
+            LVindented.push(LVt);
+        } else if (LVt == '***INDENT***') {
+            var LVj = 0;
+            if (LVi + 1 < LVpreIndent.length && (LVpreIndent[LVi + 1][0] == '}' ||
+                        LVpreIndent[LVi + 1] == ']')) {
+                LVj = 1;
+            }
+            for (; LVj < LVindentLevel; LVj += 1) {
+                LVindented.push('&nbsp;&nbsp;&nbsp;&nbsp;');
+            }
+        } else {
+            LVindented.push(LVt);
+        }
+    }
+    var LVheader = ('<html><head>' +
+            '<style>' +
+            'a { text-decoration: none;}' +
+            '.hiFunction {color:#40ffff;}' +
+            '.hiIdentifier {color:#40ffff;}' +
+            '.hiNormal {color:#ffffff;}' +
+            '.hiUndefVar {color:#ff0000;}' +
+            '.hiParam {border: 1px solid green;}' +
+            '.hiStatement {color:#ffff60;}' +
+            '.hiRepeat {color:#ffff60;}' +
+            '</style></head>' +
+            '<body style="background-color: black; ' +
+            'color: white; ' +
+            'font-family:Courier; ' +
+            'font-size:14px;">');
+    var LVfooter = '</body></html>';
+    return LVheader + LVindented.join(" ") + LVfooter;
+};
+
 // Scope
 // - It is an error to both define and use a variable in a scope if the use comes
 //   before the definition
@@ -56,64 +101,6 @@ var FFdeepFlatten = function FFdeepFlatten(PVx) {
     return LVresult;
 };
 
-var FFformatScope = function FFformatScope(PVtree) {
-    var LVpreIndent = FFdeepFlatten(PVtree);
-    var LVindented = [];
-    var LVi;
-    var LVindentLevel = 0;
-    for (LVi = 0; LVi < LVpreIndent.length; LVi += 1) {
-        var LVt = LVpreIndent[LVi];
-        if (LVt[0] == '{' || LVt == '(') {
-            LVindentLevel += 1;
-            LVindented.push(LVt);
-        } else if (LVt[0] == '}' || LVt == ')') {
-            LVindentLevel -= 1;
-            LVindented.push(LVt);
-        } else if (LVt == '***INDENT***') {
-            var LVj = 0;
-            if (LVi + 1 < LVpreIndent.length && (LVpreIndent[LVi + 1][0] == '}' ||
-                        LVpreIndent[LVi + 1] == ')')) {
-                LVj = 1;
-            }
-            for (; LVj < LVindentLevel; LVj += 1) {
-                LVindented.push('    ');
-            }
-        } else {
-            LVindented.push(LVt);
-        }
-    }
-    return LVindented.join(" ");
-};
-
-var FFformatHTML = function FFformatHTML(PVtree) {
-    var LVpreIndent = FFdeepFlatten(PVtree);
-    var LVindented = [];
-    var LVi;
-    var LVindentLevel = 0;
-    for (LVi = 0; LVi < LVpreIndent.length; LVi += 1) {
-        var LVt = LVpreIndent[LVi];
-        if (LVt == '{' || LVt == '[') {
-            LVindentLevel += 1;
-            LVindented.push(LVt);
-        } else if (LVt == '}' || LVt == ']') {
-            LVindentLevel -= 1;
-            LVindented.push(LVt);
-        } else if (LVt == '***INDENT***') {
-            var LVj = 0;
-            if (LVi + 1 < LVpreIndent.length && (LVpreIndent[LVi + 1][0] == '}' ||
-                        LVpreIndent[LVi + 1] == ']')) {
-                LVj = 1;
-            }
-            for (; LVj < LVindentLevel; LVj += 1) {
-                LVindented.push('&nbsp;&nbsp;&nbsp;&nbsp;');
-            }
-        } else {
-            LVindented.push(LVt);
-        }
-    }
-    return LVindented.join(" ");
-};
-
 var FFdefStackLookup = function FFdefStackLookup(PVdefStack, PVuseName) {
     var LVi;
     for (LVi = PVdefStack.length - 1; LVi >= 0; LVi -= 1) {
@@ -127,6 +114,7 @@ var FFdefStackLookup = function FFdefStackLookup(PVdefStack, PVuseName) {
 
 var DCdefError = -10;
 var DCdefErrorDesc = "definition for variable exists in enclosing scope: ";
+
 
 // Walk syntax tree and extract def-use data
 var FFwalkTree = function FFwalkTree(PVtree) {
@@ -268,49 +256,6 @@ var DCscopeParseError = -20;
 var DCwalkTreeError = -30;
 var DCundefVarError = -40;
 
-// Check whether or not the named file follows the scope rules
-// PVfilename - name of input file
-//
-// Calls PVk(PVerror)
-var FFscopeTest = function FFscopeTest(PVfilename, PVk) {
-    assert(typeof PVfilename == "string");
-    RRfs.readFile(PVfilename, 'utf8', function (PVerror, PVdata) {
-        if (PVerror) {
-            return PVk({
-                MMrc : DCfileError,
-                MMmsg : "Unable to read file: " + PVfilename
-            });
-        }
-        var LVparse = FFscopeParse(PVdata);
-        if (LVparse.MMrc != 0) {
-            return PVk({
-                MMrc : DCscopeParseError,
-                MMmsg : "scopeParse failed",
-                MMdata : LVparse
-            });
-        }
-        var LVsyntax = LVparse.MMsyntax;
-        var LVwalkResult = FFwalkTree(LVsyntax.MMdata3);
-        if (LVwalkResult.MMrc != 0) {
-            return PVk({
-                MMrc : DCwalkTreeError,
-                MMmsg : "walkTree failed",
-                MMdata : LVwalkResult
-            });
-        }
-        if (LVwalkResult.MMundef.length > 0 ) {
-            return PVk({
-                MMrc : DCundefVarError,
-                MMmsg : "undefined variables",
-                MMdata : LVwalkResult,
-                MMdata2 : LVwalkResult.MMundef
-            });
-        }
-        PVk(null);
-    });
-};
-
-
 // PVfilename - name of input file
 //
 // Calls PVk(PVerror, PVoutput)
@@ -376,32 +321,17 @@ var FFfullScopeTest = function FFfullScopeTest(PVfilename, PVk) {
         // Generate HTML
         var LVparse2 = RRtable.MMtestParse2(LVsymbols, LVtokens);
         assert(LVparse2.MMrc == 0);
-        var LVhtml = FFformatHTML(LVparse2.MMhtml);
-        var LVheader = ('<html><head>' +
-                '<style>' +
-                'a { text-decoration: none;}' +
-                '.hiFunction {color:#40ffff;}' +
-                '.hiIdentifier {color:#40ffff;}' +
-                '.hiNormal {color:#ffffff;}' +
-                '.hiUndefVar {color:#ff0000;}' +
-                '.hiParam {border: 1px solid green;}' +
-                '.hiStatement {color:#ffff60;}' +
-                '.hiRepeat {color:#ffff60;}' +
-                '</style></head>' +
-                '<body style="background-color: black; ' +
-                'color: white; ' +
-                'font-family:Courier; ' +
-                'font-size:14px;">');
-        var LVfooter = '</body></html>';
-        PVk(null, {
+        return PVk(null, {
             MMtree : LVwalkResult.MMscopeTree,
-            MMhtml : LVheader + LVhtml + LVfooter
+            MMhtmlTree : LVparse2.MMhtml
         });
     });
 };
 
 // Given a path to a file, make all intermediate directories if needed
-var FFmakeDirs = function FFmakeDirs (PVpath) {
+// When finished, call PVk(error, dirsCreated) with an array of strings giving the
+// pathnames of the directories that were created
+var FFmakeDirs = function FFmakeDirs (PVpath, PVk) {
     var LVslashes = []; // indexes of slashes in PVpash
     var LVi;
     for (LVi = 0; LVi < PVpath.length; LVi += 1) {
@@ -409,12 +339,29 @@ var FFmakeDirs = function FFmakeDirs (PVpath) {
             LVslashes.push(LVi);
         }
     }
+    var LVpartials = [];
+    var LVcreated = [];
     for (LVi = 0; LVi < LVslashes.length; LVi += 1) {
         var LVpartial = PVpath.slice(0,LVslashes[LVi]);
-        if (! RRfs.existsSync(LVpartial)) {
-            RRfs.mkdirSync(LVpartial);
-        }
+        LVpartials.push(LVpartial);
     }
+    var LVmdHelper = function LVmdHelper () {
+        if (LVpartials.length == 0) {
+            return PVk(null, LVcreated);
+        }
+        var LVpartial = LVpartials[0];
+        RRfs.exists(LVpartial, function (PVexists) {
+            if (! PVexists) {
+                RRfs.mkdir(function (PVerror) {
+                    if (PVerror) {
+                        return PVk(PVerror, LVcreated);
+                    }
+                    LVpartials = LVpartials.slice(1);
+                    return LVmdHelper();
+                });
+            }
+        });
+    };
 };
 
 // Build a bridge to the file
@@ -422,8 +369,9 @@ var FFbridgeFile = function FFbridgeFile(PVpath, PVdata) {
     RRfs.writeFile(PVpath, PVdata,
         function (PVerror) {
             if (PVerror) {
-                FFmakeDirs(PVpath);
-                RRfs.writeFile(PVpath, PVdata);
+                return FFmakeDirs(PVpath, function (PVdirsCreated) {
+                    RRfs.writeFile(PVpath, PVdata);
+                });
             }
         }
     );
@@ -527,33 +475,45 @@ var FFformatDraft = function FFformatDraft(PVdraftTree) {
     return LVindented.join(" ");
 };
 
+var FFformatScope = function FFformatScope(PVtree) {
+    var LVpreIndent = FFdeepFlatten(PVtree);
+    var LVindented = [];
+    var LVi;
+    var LVindentLevel = 0;
+    for (LVi = 0; LVi < LVpreIndent.length; LVi += 1) {
+        var LVt = LVpreIndent[LVi];
+        if (LVt[0] == '{' || LVt == '(') {
+            LVindentLevel += 1;
+            LVindented.push(LVt);
+        } else if (LVt[0] == '}' || LVt == ')') {
+            LVindentLevel -= 1;
+            LVindented.push(LVt);
+        } else if (LVt == '***INDENT***') {
+            var LVj = 0;
+            if (LVi + 1 < LVpreIndent.length && (LVpreIndent[LVi + 1][0] == '}' ||
+                        LVpreIndent[LVi + 1] == ')')) {
+                LVj = 1;
+            }
+            for (; LVj < LVindentLevel; LVj += 1) {
+                LVindented.push('    ');
+            }
+        } else {
+            LVindented.push(LVt);
+        }
+    }
+    return LVindented.join(" ");
+};
+
 // PVk(error, draft)
 var FFtreeDraft = function FFtreeDraft(PVfilename, PVk) {
-    RRfs.readFile(PVfilename, 'utf8', function (PVerror, data) {
+    RRfs.readFile(PVfilename, 'utf8', function (PVerror, PVdata) {
         if (PVerror) {
-            PVk(PVerror, null);
+            return PVk(PVerror, null);
         }
-        var LVbundle = FFtree(data);
+        var LVbundle = FFtree(PVdata);
         if (LVbundle.MMrc != 0) {
-            PVk(LVbundle, null);
+            return PVk(LVbundle, null);
         }
-        // console.log(data);
-        // console.log("# Word Tree");
-        // var LVword = LVbundle.MMword.toString().replace(RegExp(",","g")," ");
-        // console.log(LVword);
-        // console.log("# Member data");
-        // var LVmember0 = LVbundle.MMdata4.toString().replace(RegExp(",","g")," ");
-        // var LVmembers = [];
-        // LVmember0.split(' ').forEach(function (LVx) {
-        //     if (LVx.length > 0) {
-        //         LVmembers.push(LVx);
-        //         if (LVx[0] != '.') {
-        //             LVmembers.push('\n');
-        //         }
-        //     }
-        // });
-        // console.log(LVmembers.join(''));
-        // console.log("# Draft data");
         var LVdraft = FFformatDraft(LVbundle.MMdata5);
         var LVruntimePath = RRpath.resolve('.') + '/runtime.js';
         var LVheader = (
@@ -561,38 +521,39 @@ var FFtreeDraft = function FFtreeDraft(PVfilename, PVk) {
             'var ACruntime = require("' + LVruntimePath + '");\n' +
             'var ACgetItem = ACruntime.MMgetItem;\n' +
             'var ACsetItem = ACruntime.MMsetItem;\n' +
-            'require = ACruntime.MMwrapRequire(require);\n' +
+            'require = ACruntime.MMrequire;\n' +
             '\n'
         );
-        PVk(null, LVheader + LVdraft);
+        return PVk(null, LVheader + LVdraft);
     });
 };
 
 // Calls PVk( list of files written )
+// Note that this may return before the files are actually written
 var FFfullBatch = function FFfullBatch(PVfilename, PVk) {
     FFfullScopeTest(PVfilename, function (PVerror, PVscope) {
         if (PVerror) {
             var LVerrorPath = 'acbuild/error/' + FFrootFilename(PVfilename);
             var LVerrorData = RRutil.format(PVerror);
             FFbridgeFile(LVerrorPath, LVerrorData);
-            PVk([LVerrorPath]);
+            return PVk([LVerrorPath]);
         }
         FFtreeDraft(PVfilename, function (PVerror2, PVjs) {
             if (PVerror2) {
                 var LVerrorPath = 'acbuild/error/' + FFrootFilename(PVfilename);
                 var LVerrorData = RRutil.format(PVerror2);
                 FFbridgeFile(LVerrorPath, LVerrorData);
-                PVk([LVerrorPath]);
+                return PVk([LVerrorPath]);
             }
             var LVscopePath = 'acbuild/scope/' + FFrootFilename(PVfilename);
             var LVscopeData = FFformatScope(PVscope.MMtree);
             FFbridgeFile(LVscopePath, LVscopeData);
             var LVhtmlPath = 'acbuild/html/' + FFrootFilename(PVfilename) + '.html';
-            var LVhtmlData = PVscope.MMhtml;
+            var LVhtmlData = FFformatHtml(PVscope.MMhtmlTree);
             FFbridgeFile(LVhtmlPath, LVhtmlData);
             var LVjsPath = 'acbuild/js/' + FFrootFilename(PVfilename) + '.js';
             FFbridgeFile(LVjsPath, PVjs);
-            PVk([LVscopePath, LVhtmlPath, LVjsPath]);
+            return PVk([LVscopePath, LVhtmlPath, LVjsPath]);
         });
     });
 };
@@ -612,10 +573,11 @@ var FFfullMain = function FFfullMain(PVfilename) {
             var LVscopeData = FFformatScope(PVscope.MMtree);
             FFbridgeFile(LVscopePath, LVscopeData);
             var LVhtmlPath = 'acbuild/html/' + FFrootFilename(PVfilename) + '.html';
-            var LVhtmlData = PVscope.MMhtml;
+            var LVhtmlData = FFformatHtml(PVscope.MMhtmlTree);
             FFbridgeFile(LVhtmlPath, LVhtmlData);
             var LVjsPath = 'acbuild/js/' + FFrootFilename(PVfilename) + '.js';
             FFbridgeFile(LVjsPath, PVjs);
+            return;
         });
     });
 };
@@ -630,5 +592,4 @@ module.exports = {
     MMscopeParse: FFscopeParse,
     MMbridgeFile: FFbridgeFile,
     MMfullBatch : FFfullBatch,
-    MMscopeTest : FFscopeTest
 };

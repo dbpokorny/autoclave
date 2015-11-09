@@ -91,15 +91,9 @@ var FFfileUrlToLocal = function (PVurl) {
     return { MMrc : 0, MMpath : "acbuild/js/" + PVurl.slice(LVlastColon + 1) };
 }
 
-// FFwrapRequire is called with the module's "require()" function and returns a
-// function to replace it (a.k.a. "decorator" from Python). The new function
-// intercepts a "git file URL" which looks like
-//
-//     git@github.com:user/repo/path/to/file.js
-//
-// In this case, it is resolved to a local path like
-//
-//     acbuild/js/user/repo/path/to/file.js
+// FFwrapRequire returns a function that replaces require(pathname). The new
+// function takes a git file URL git@github.com:user/repo/path/to/file.js and
+// loads acbuild/js/user/repo/path/to/file.js
 var FFwrapRequire = function FFwrapRequire(PVreq) {
     var LVnewReq = function (PVx) {
         var LVpathResult = FFfileUrlToLocal(PVx);
@@ -107,7 +101,8 @@ var FFwrapRequire = function FFwrapRequire(PVreq) {
             var LVpath = LVpathResult.MMpath;
             return require(LVpath);
         }
-        return PVreq(PVx);
+        console.log("Require takes a URL argument");
+        console.log(LVpathResult);
     };
     LVnewReq.main = PVreq.main;
     return LVnewReq;
