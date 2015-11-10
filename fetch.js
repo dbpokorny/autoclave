@@ -160,7 +160,7 @@ var FFtest = function FFtest(PVgitURL) {
             return;
         }
         // console.log(PVr);
-        PVr.sync(function (PVerror) {
+        PVr.pull(function (PVerror) {
             if (PVerror) {
                 console.log(PVerror);
                 return;
