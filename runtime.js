@@ -66,48 +66,50 @@ var DCfileUrlError = -10;
 var DCfileUrlErrorMsg = "Cannot read file URL";
 var DCfileUrlSegmentError = -20;
 var DCfileUrlSegmentErrorMsg = "Invalid pathname segment";
-// Given a github file URL, return the path to the clean version in acbuild/js
+// Given a github file URL, return the main path to the local
 // (it may or may not exist)
-var FFfileUrlToClean = function (PVurl) {
+var FFfileUrlToRootPath = function FFfileUrlToRootPath(PVurl) {
     if (PVurl.slice(PVurl.length - 3) != ".js") {
         return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
-            MMdata : PVurl
+            MMurl : PVurl
         };
     }
     PVurl = PVurl.slice(0,PVurl.length - 3);
     var LVlastColon = PVurl.lastIndexOf(':');
     if (LVlastColon <= 0) {
         return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
-            MMdata : PVurl
+            MMurl : PVurl
         };
     }
     var LVpathSegments = PVurl.slice(LVlastColon + 1).split('/');
+    if (LVpathSegments.length == 0) {
+        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
+            MMurl : PVurl
+        };
+    }
     var LVi;
-    for (LVi = 0; LVi < LVpathSegments.length - 1; LVi += 1) {
-        if (! RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVpathSegments[LVi])) {
+    for (LVi = 0; LVi < LVpathSegments.length; LVi += 1) {
+        var LVsegment = LVpathSegments[LVi];
+        var LVregExpOK = RegExp("^[.-a-zA-Z0-9_]{2,50}$").test(LVsegment);
+        var LVdotDotFree = LVsegment.indexOf('..') == -1;
+        if (! (LVregExpOK && LVdotDotFree)) {
             return { MMrc : DCfileUrlSegmentError,
-                MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVpathSegments[LVi]
+                MMmsg : DCfileUrlSegmentErrorMsg, MMsegment : LVsegment
             };
         }
     }
-    var LVfilename = LVpathSegments[-1];
-    var LVfilenameRoot = LVfilename.slice(0,LVfilename.length - 3);
-    if (! RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVfilenameRoot)) {
-        return { MMrc : DCfileUrlSegmentError,
-            MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVfilename
-        };
-    }
-    return { MMrc : 0, MMpath : "acbuild/js/" + PVurl.slice(LVlastColon + 1) };
+    return { MMrc : 0, MMrootPath : PVurl.slice(LVlastColon + 1) };
 };
+
 
 // FFwrapRequire returns a function that replaces require(pathname). The new
 // function takes a git file URL git@github.com:user/repo/path/to/file.js and
 // loads acbuild/js/user/repo/path/to/file.js
 var FFwrapRequire = function FFwrapRequire(PVreq) {
     var LVnewReq = function (PVx) {
-        var LVpathResult = FFfileUrlToClean(PVx);
+        var LVpathResult = FFfileUrlToRootPath(PVx);
         if (LVpathResult.MMrc == 0) {
-            var LVpath = LVpathResult.MMpath;
+            var LVpath = 'ghcache/js/' + LVpathResult.MMpath + '.js';
             return require(LVpath);
         }
         console.log("Require takes a URL argument");

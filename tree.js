@@ -378,8 +378,8 @@ var FFbridgeFile = function FFbridgeFile(PVpath, PVdata) {
     RRfs.writeFile(PVpath, PVdata,
         function (PVerror) {
             if (PVerror) {
-                return FFmakeDirs(PVpath, function (PVerror, PVdirs) {
-                    if (! PVerror) {
+                return FFmakeDirs(PVpath, function (PVerror2, PVdirs) {
+                    if (! PVerror2) {
                         RRfs.writeFile(PVpath, PVdata);
                     }
                 });
@@ -539,7 +539,7 @@ var DCfileUrlSegmentError = -20;
 var DCfileUrlSegmentErrorMsg = "Invalid pathname segment";
 // Given a github file URL, return the main path to the local
 // (it may or may not exist)
-var FFfileUrlToLocal = function (PVurl) {
+var FFfileUrlToRootPath = function FFfileUrlToRootPath(PVurl) {
     if (PVurl.slice(PVurl.length - 3) != ".js") {
         return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
             MMurl : PVurl
@@ -560,22 +560,24 @@ var FFfileUrlToLocal = function (PVurl) {
     }
     var LVi;
     for (LVi = 0; LVi < LVpathSegments.length; LVi += 1) {
-        if (! RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVpathSegments[LVi])) {
+        var LVsegment = LVpathSegments[LVi];
+        var LVregExpOK = RegExp("^[.-a-zA-Z0-9_]{2,50}$").test(LVsegment);
+        var LVdotDotFree = LVsegment.indexOf('..') == -1;
+        if (! (LVregExpOK && LVdotDotFree)) {
             return { MMrc : DCfileUrlSegmentError,
-                MMmsg : DCfileUrlSegmentErrorMsg, MMsegment : LVpathSegments[LVi]
+                MMmsg : DCfileUrlSegmentErrorMsg, MMsegment : LVsegment
             };
         }
     }
     return { MMrc : 0, MMrootPath : PVurl.slice(LVlastColon + 1) };
 };
 
-
 // perform all batch operations for the file identified by url PVurl
 // calls PVk (error, list of files written)
 // Note that this may return before the files are actually written
 var FFfullBatch = function FFfullBatch(PVurl, PVk) {
     assert(PVk.length == 2);
-    var LVparseUrl = FFfileUrlToLocal(PVurl);
+    var LVparseUrl = FFfileUrlToRootPath(PVurl);
     if (LVparseUrl.MMrc) {
         return PVk(LVparseUrl, []);
     }
