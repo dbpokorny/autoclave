@@ -78,8 +78,6 @@ var FFgitUrlToUserRepo = function FFgitUrlToUserRepo(PVurl) {
     return { MMrc : 0, MMghUser : LVghUser, MMghRepo : LVghRepo };
 }
 
-
-
 // Fetches a git URL (if necessary) and caches it
 // Does not update (pull) repo if it exists
 // returns PVk(error, repo)
@@ -142,6 +140,12 @@ var FFwalkTreeSync = function FFwalkTreeSync(PVroot, PVf) {
     FFwtHelper(PVroot);
 };
 
+var FFmakeFileUrl = function FFmakeFileUrl(PVpath) {
+    assert(PVpath.slice(PVpath.length - 3) == ".js");
+    assert(PVpath.slice(0,8) == 'ghcache/');
+    return 'git@github.com:' + PVpath.slice(8);
+};
+
 var FFtest = function FFtest(PVgitURL) {
     FFgitURL(PVgitURL, function (PVe, PVr) {
         if (PVe) {
@@ -151,7 +155,12 @@ var FFtest = function FFtest(PVgitURL) {
             FFwalkTreeSync(GVrepoCache[PVgitURL], function (PVx) {
                 if (PVx.slice(PVx.length - 3) == ".js") {
                     console.log('javascript file found, checking...');
-                    RRtree.MMfullBatch(PVx, function (PVfiles) {
+                    var LVfileUrl = FFmakeFileUrl(PVx);
+                    RRtree.MMfullBatch(LVfileUrl,
+                        function (PVerror, PVfiles) {
+                        if (PVerror) {
+                            console.log(PVerror);
+                        }
                         console.log('wrote files: ' + PVfiles);
                     });
                 }
@@ -159,6 +168,10 @@ var FFtest = function FFtest(PVgitURL) {
         }
     });
 };
+
+if (require.main === module && process.argv.length >= 3) {
+    FFtest(process.argv[2]);
+}
 
 // FFtest('git@github.com:benoitvallon/react-native-nw-react-calculator.git');
 // FFtest('git@github.com:botwillacceptanything/botwillacceptanything.git');

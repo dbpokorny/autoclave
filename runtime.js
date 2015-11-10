@@ -66,11 +66,21 @@ var DCfileUrlError = -10;
 var DCfileUrlErrorMsg = "Cannot read file URL";
 var DCfileUrlSegmentError = -20;
 var DCfileUrlSegmentErrorMsg = "Invalid pathname segment";
-// Given a github file URL, return the path to the local (it may or may not exist)
-var FFfileUrlToLocal = function (PVurl) {
+// Given a github file URL, return the path to the clean version in acbuild/js
+// (it may or may not exist)
+var FFfileUrlToClean = function (PVurl) {
+    if (PVurl.slice(PVurl.length - 3) != ".js") {
+        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
+            MMdata : PVurl
+        };
+    }
+    PVurl = PVurl.slice(0,PVurl.length - 3);
     var LVlastColon = PVurl.lastIndexOf(':');
-    if (LVlastColon <= 0) { return {
-        MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg, MMdata : PVurl }; }
+    if (LVlastColon <= 0) {
+        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
+            MMdata : PVurl
+        };
+    }
     var LVpathSegments = PVurl.slice(LVlastColon + 1).split('/');
     var LVi;
     for (LVi = 0; LVi < LVpathSegments.length - 1; LVi += 1) {
@@ -82,22 +92,20 @@ var FFfileUrlToLocal = function (PVurl) {
     }
     var LVfilename = LVpathSegments[-1];
     var LVfilenameRoot = LVfilename.slice(0,LVfilename.length - 3);
-    var LVfilenameExt = LVfilename.slice(LVfilename.length - 3);
-    if (! (LVfilenameExt == ".js" &&
-            RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVfilenameRoot))) {
+    if (! RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVfilenameRoot)) {
         return { MMrc : DCfileUrlSegmentError,
             MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVfilename
         };
     }
     return { MMrc : 0, MMpath : "acbuild/js/" + PVurl.slice(LVlastColon + 1) };
-}
+};
 
 // FFwrapRequire returns a function that replaces require(pathname). The new
 // function takes a git file URL git@github.com:user/repo/path/to/file.js and
 // loads acbuild/js/user/repo/path/to/file.js
 var FFwrapRequire = function FFwrapRequire(PVreq) {
     var LVnewReq = function (PVx) {
-        var LVpathResult = FFfileUrlToLocal(PVx);
+        var LVpathResult = FFfileUrlToClean(PVx);
         if (LVpathResult.MMrc == 0) {
             var LVpath = LVpathResult.MMpath;
             return require(LVpath);

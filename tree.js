@@ -279,6 +279,7 @@ var FFfullScopeTest = function FFfullScopeTest(PVfilename, PVk) {
             return PVk({
                 MMrc : DCscopeParseError,
                 MMmsg : "scopeParse failed",
+                MMfile : PVfilename,
                 MMdata : LVparse
             }, null);
         }
@@ -292,6 +293,7 @@ var FFfullScopeTest = function FFfullScopeTest(PVfilename, PVk) {
             return PVk({
                 MMrc : LVwalkResult.MMrc,
                 MMmsg : "walkTree failed",
+                MMfile : PVfilename,
                 MMdata : LVwalkResult
             }, null);
         }
@@ -301,6 +303,7 @@ var FFfullScopeTest = function FFfullScopeTest(PVfilename, PVk) {
             return PVk({
                 MMrc : DCundefVarError,
                 MMmsg : "undefined variables",
+                MMfile : PVfilename,
                 MMdata : LVwalkResult
             }, null);
         }
@@ -370,8 +373,10 @@ var FFbridgeFile = function FFbridgeFile(PVpath, PVdata) {
     RRfs.writeFile(PVpath, PVdata,
         function (PVerror) {
             if (PVerror) {
-                return FFmakeDirs(PVpath, function (PVdirsCreated) {
-                    RRfs.writeFile(PVpath, PVdata);
+                return FFmakeDirs(PVpath, function (PVerror, PVdirs) {
+                    if (! PVerror) {
+                        RRfs.writeFile(PVpath, PVdata);
+                    }
                 });
             }
         }
@@ -523,47 +528,41 @@ var FFtreeDraft = function FFtreeDraft(PVfilename, PVk) {
     });
 };
 
-var FFrootFilename = function FFrootFilename(PVfilename) {
-    var LVdotIndex = PVfilename.indexOf('.');
-    assert(LVdotIndex > 0);
-    return PVfilename.slice(0,LVdotIndex);
-};
-
 var DCfileUrlError = -10;
 var DCfileUrlErrorMsg = "Cannot read file URL";
 var DCfileUrlSegmentError = -20;
 var DCfileUrlSegmentErrorMsg = "Invalid pathname segment";
-// Given a github file URL, return the path to the local (it may or may not exist)
+// Given a github file URL, return the main path to the local
+// (it may or may not exist)
 var FFfileUrlToLocal = function (PVurl) {
     if (PVurl.slice(PVurl.length - 3) != ".js") {
         return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
-            MMdata : PVurl };
+            MMurl : PVurl
+        };
     }
     PVurl = PVurl.slice(0,PVurl.length - 3);
     var LVlastColon = PVurl.lastIndexOf(':');
-    if (LVlastColon <= 0) { return {
-        MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg, MMdata : PVurl };
+    if (LVlastColon <= 0) {
+        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
+            MMurl : PVurl
+        };
     }
     var LVpathSegments = PVurl.slice(LVlastColon + 1).split('/');
+    if (LVpathSegments.length == 0) {
+        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
+            MMurl : PVurl
+        };
+    }
     var LVi;
-    for (LVi = 0; LVi < LVpathSegments.length - 1; LVi += 1) {
+    for (LVi = 0; LVi < LVpathSegments.length; LVi += 1) {
         if (! RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVpathSegments[LVi])) {
             return { MMrc : DCfileUrlSegmentError,
-                MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVpathSegments[LVi]
+                MMmsg : DCfileUrlSegmentErrorMsg, MMsegment : LVpathSegments[LVi]
             };
         }
     }
-    var LVfilename = LVpathSegments[-1];
-    var LVfilenameRoot = LVfilename.slice(0,LVfilename.length - 3);
-    var LVfilenameExt = LVfilename.slice(LVfilename.length - 3);
-    if (! (LVfilenameExt == ".js" &&
-            RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVfilenameRoot))) {
-        return { MMrc : DCfileUrlSegmentError,
-            MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVfilename
-        };
-    }
-    return { MMrc : 0, MMpath : PVurl.slice(LVlastColon + 1) };
-}
+    return { MMrc : 0, MMrootPath : PVurl.slice(LVlastColon + 1) };
+};
 
 
 // perform all batch operations for the file identified by url PVurl
@@ -575,29 +574,29 @@ var FFfullBatch = function FFfullBatch(PVurl, PVk) {
     if (LVparseUrl.MMrc) {
         return PVk(LVparseUrl, []);
     }
-    var LVrootname = LVparseUrl.MMpath;
-    var LVfilename = "ghcache/" + LVrootname + ".js";
+    var LVpathname = LVparseUrl.MMrootPath;
+    var LVfilename = "ghcache/" + LVpathname + ".js";
     FFfullScopeTest(LVfilename, function (PVerror, PVscope) {
         if (PVerror) {
-            var LVerrorPath = 'acbuild/error/' + LVrootname;
+            var LVerrorPath = 'acbuild/error/' + LVpathname;
             var LVerrorData = RRutil.format(PVerror);
             FFbridgeFile(LVerrorPath, LVerrorData);
             return PVk(PVerror, [LVerrorPath]);
         }
         FFtreeDraft(LVfilename, function (PVerror2, PVjs) {
             if (PVerror2) {
-                var LVerrorPath = 'acbuild/error/' + LVrootname;
+                var LVerrorPath = 'acbuild/error/' + LVpathname;
                 var LVerrorData = RRutil.format(PVerror2);
                 FFbridgeFile(LVerrorPath, LVerrorData);
                 return PVk(PVerror2, [LVerrorPath]);
             }
-            var LVscopePath = 'acbuild/scope/' + LVrootname;
+            var LVscopePath = 'acbuild/scope/' + LVpathname;
             var LVscopeData = FFformatScope(PVscope.MMtree);
             FFbridgeFile(LVscopePath, LVscopeData);
-            var LVhtmlPath = 'acbuild/html/' + LVrootname + '.html';
+            var LVhtmlPath = 'acbuild/html/' + LVpathname + '.html';
             var LVhtmlData = FFformatHtml(PVscope.MMhtmlTree);
             FFbridgeFile(LVhtmlPath, LVhtmlData);
-            var LVjsPath = 'acbuild/js/' + LVrootname + '.js';
+            var LVjsPath = 'acbuild/js/' + LVpathname + '.js';
             FFbridgeFile(LVjsPath, PVjs);
             return PVk(null, [LVscopePath, LVhtmlPath, LVjsPath]);
         });
@@ -605,13 +604,11 @@ var FFfullBatch = function FFfullBatch(PVurl, PVk) {
 };
 
 var FFfullMain = function FFfullMain(PVurl) {
-    FFfullBatch(PVurl, function (PVerror, PVfileList) {
+    FFfullBatch(PVurl, function (PVerror, PVfiles) {
         if (PVerror) {
             console.log(PVerror);
-            console.log("wrote files: " + PVfileList);
-            return;
         }
-        console.log("wrote files: " + PVfileList);
+        console.log("wrote files: " + PVfiles);
     });
 };
 

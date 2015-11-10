@@ -1533,11 +1533,11 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
                 continue;
             }
         }
+        var LVlineno = LVlastToken ? LVlastToken.MMlineno + 1 : 1;
+        var LVcolno = LVlastToken ? LVlastToken.MMcolno + 1 : 1;
         return {
             MMrc : DCactionError,
-            MMerror : ("Unknown action on line " +
-                    (LVlastToken.MMlineno + 1) + ", col " +
-                    (LVlastToken.MMcolno + 1)),
+            MMerror : "Unknown action on line " + LVlineno + ", col " + LVcolno,
             MMinfo : FFformatInfo(util.format(LVword))
         };
     }
