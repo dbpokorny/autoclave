@@ -3,6 +3,8 @@
 //
 // 1 token data: token type, line number, column number, length in chars, raw
 //   string data, offset within input
+//
+// - a token may not start with "AC", which is reserved for the autoclave runtime
 
 "use strict";
 
@@ -80,7 +82,8 @@ var GVinvalidIdsArray = [ 'case', 'class', 'catch', 'const', 'debugger', 'defaul
     'assign', 'create', 'defineProperties', 'defineProperty', 'freeze',
     'getNotifier', 'getOwnPropertyDescriptor', 'getOwnPropertySymbols',
     'getPrototypeOf', '__defineGetter__', '__defineSetter__', '__lookupGetter__',
-    '__lookupSetter__', 'constructor','ACgetItem','ACsetItem','ACruntime'];
+    '__lookupSetter__', 'constructor', 'ACgetItem', 'ACsetItem', 'ACruntime',
+    'ACmodule','ACobject'];
 var GVinvalidIds = {};
 GVinvalidIdsArray.forEach(function(PVk) { GVinvalidIds[PVk] = 1; });
 var GVstrEscapes = {};
@@ -394,7 +397,7 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
             }
             LVj = LVlongestId;
             var LVidCand = PVinput.slice(LVi, LVi + LVj);
-            if (GVinvalidIds[LVidCand] == 1) {
+            if (GVinvalidIds[LVidCand] == 1 || LVidCand.slice(0,2) == "AC") {
                 return {
                     MMrc : DCinvalidIdError, MMerror : "Invalid identifier: "
                     + LVidCand, MMlineno : LVlineno, MMcolno : LVcolno
@@ -610,7 +613,7 @@ var FFtest = function FFtest(PVfilename) {
 
 // Usage:
 //     node token.js [FILENAME]
-if (require.main === module && process.argv.length >= 3) {
+if (require.main.id === module.id && process.argv.length >= 3) {
     FFtest(process.argv[2]);
 }
 

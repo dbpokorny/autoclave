@@ -94,7 +94,7 @@ GVghUsers.forEach(function (PVuser) {
     });
 });
 
-RRfetch.MMwalkTree('acbuild/scope', function (PVscopeFile) {
+RRfetch.MMwalkTreeSync('acbuild/scope', function (PVscopeFile) {
     assert(PVscopeFile.slice(0,7) == 'acbuild');
     GVget[PVscopeFile.slice(7)] = ["k", function (PVk) {
         PVk(['static', 'text/plain', RRfs.readFileSync(PVscopeFile)]);
@@ -142,7 +142,7 @@ FFmakeMainPage();
 
 var GVerror = [];
 
-RRfetch.MMwalkTree('acbuild/error', function (PVerrorFile) {
+RRfetch.MMwalkTreeSync('acbuild/error', function (PVerrorFile) {
     GVerror.push([PVerrorFile, RRfs.readFileSync(PVerrorFile)]);
 });
 

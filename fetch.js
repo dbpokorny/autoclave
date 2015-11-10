@@ -51,31 +51,30 @@ var GVrepoObjectCache = {};
 // map git URL to list of paths to ".js" files in the local cache
 var GVjsFiles = {};
 
-var DCrepoUrlError = -10;
-var DCrepoUrlErrorMsg = "Cannot read git repo URL";
-var DCghUserUrlError = -20;
-var DCghUserUrlErrorMsg = "Cannot read github user name from git repo URL";
-var DCghRepoUrlError = -30;
-var DCghRepoUrlErrorMsg = "Cannot read github repo name from git repo URL";
+var DCgitUrlError = -10;
+var DCgitUrlErrorMsg = "Cannot read git URL";
+var DCghUrlError = -20;
+var DCghUrlErrorMsg = "Invalid github user/repo name";
 // Given a github repo URL, extract user and repo
 var FFgitUrlToUserRepo = function FFgitUrlToUserRepo(PVurl) {
     if (PVurl.slice(PVurl.length - 4) != '.git') {
-        return { MMrc : DCrepoUrlError, MMmsg : DCrepoUrlErrorMsg,
+        return { MMrc : DCgitUrlError, MMmsg : DCgitUrlErrorMsg,
             MMdata : PVurl };
     }
     var LVlastColon = PVurl.lastIndexOf(':');
     var LVlastSlash = PVurl.lastIndexOf('/');
     var LVlastDot = PVurl.lastIndexOf('.');
     if (LVlastColon <= 0 || LVlastSlash <= 0 || LVlastDot <= 0) { return {
-        MMrc : DCrepoUrlError, MMmsg : DCrepoUrlErrorMsg, MMdata : PVurl };
+        MMrc : DCgitUrlError, MMmsg : DCgitUrlErrorMsg, MMdata : PVurl };
     }
     var LVghUser = PVurl.slice(LVlastColon + 1, LVlastSlash);
     var LVghRepo = PVurl.slice(LVlastSlash + 1, LVlastDot);
-    if (! RegExp("^[-a-zA-Z0-9_]{2,25}$").test(LVghUser)) { return {
-        MMrc : DCghUserUrlError, MMmsg : DCghUserUrlErrorMsg, MMdata : PVurl };
-    }
-    if (! RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVghRepo)) { return {
-        MMrc : DCghRepoUrlError, MMmsg : DCghRepoUrlErrorMsg, MMdata : PVurl };
+    var LVuserREok = RegExp("^[-.a-zA-Z0-9_]{2,25}$").test(LVghUser);
+    var LVuserDDok = LVghUser.indexOf('..') == -1;
+    var LVrepoREok = RegExp("^[-.a-zA-Z0-9_]{2,25}$").test(LVghRepo);
+    var LVrepoDDok = LVghRepo.indexOf('..') == -1;
+    if (! (LVuserREok && LVuserDDok && LVrepoREok && && LVrepoDDok)) { return {
+        MMrc : DCghUrlError, MMmsg : DCghUrlErrorMsg, MMdata : PVurl };
     }
     return { MMrc : 0, MMghUser : LVghUser, MMghRepo : LVghRepo };
 }
@@ -182,7 +181,7 @@ var FFtest = function FFtest(PVgitURL) {
     });
 };
 
-if (require.main === module && process.argv.length >= 3) {
+if (require.main.id === module.id && process.argv.length >= 3) {
     FFtest(process.argv[2]);
 }
 

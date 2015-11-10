@@ -634,7 +634,10 @@ var GVrulesAndReducers = [
         function (PVx,PV_,PVm) { return [PVx,'.',PVm]; },
         function (PVx,PV_,PVm) { return PVx; },
         function (PVx,PV_,PVm) { return [PVx,PV_,PVm]; },
-        function (PVx,PV_,PVm) { return ['ACgetItem','(',PVx,',',('"' + PVm.MMchars + '"'),')']; },
+        function (PVx,PV_,PVm) {
+            return (PVm.MMchars == "hasOwnProperty" ?
+                    ['AChasItemCurry','(',PVx,')'] : 
+                    ['ACgetItem','(',PVx,',',('"' + PVm.MMchars + '"'),')']); },
         function (PVx,PV_,PVm) { return [PVx,'.',PVm.MMchars]; },
     [MEMX,'->',[MEMX,'[',X,']']],
         function (PVx,PV_,PVs,PV__) { return [PVx,'[',PVs,']']; },

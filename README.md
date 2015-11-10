@@ -29,3 +29,9 @@ the code to refer instead to the property name enclosed in backticks. Using a
 property `x` of any object will be translated to use of property \``x`\`.
 Exceptions are listed in `runtime.js`.
 
+## Filesystem
+
+It is possible for a program to read from and write to the filesystem. This data
+is stored in filesys/user/repo, so a path such as "path/to/file" will effectively
+read and write filesys/user/repo/path/to/file. There is a quota of 5 megabytes per
+(user,repo) pair and 25 megabytes per user.
