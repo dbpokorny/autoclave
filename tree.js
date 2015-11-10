@@ -7,6 +7,24 @@ var RRfs = require('fs');
 var RRpath = require("path");
 var RRutil = require("util");
 
+var FFdeepFlatten = function FFdeepFlatten(PVx) {
+    var LVresult = [];
+    var FFdfHelper = function FFdfHelper(PVn) {
+        if (PVn instanceof Array) {
+            var LVi;
+            for (LVi = 0; LVi < PVn.length; LVi += 1) {
+                FFdfHelper(PVn[LVi]);
+            }
+        } else {
+            if (PVn != '') {
+                LVresult.push(PVn);
+            }
+        }
+    };
+    FFdfHelper(PVx);
+    return LVresult;
+};
+
 var FFformatHtml = function FFformatHtml(PVtree) {
     var LVpreIndent = FFdeepFlatten(PVtree);
     var LVindented = [];
@@ -81,24 +99,6 @@ var FFscopeParse = function FFscopeParse(PVinput) {
         MMtokens : LVtokens,
         MMsymbols : LVsymbols
     };
-};
-
-var FFdeepFlatten = function FFdeepFlatten(PVx) {
-    var LVresult = [];
-    var FFdfHelper = function FFdfHelper(PVn) {
-        if (PVn instanceof Array) {
-            var LVi;
-            for (LVi = 0; LVi < PVn.length; LVi += 1) {
-                FFdfHelper(PVn[LVi]);
-            }
-        } else {
-            if (PVn != '') {
-                LVresult.push(PVn);
-            }
-        }
-    };
-    FFdfHelper(PVx);
-    return LVresult;
 };
 
 var FFdefStackLookup = function FFdefStackLookup(PVdefStack, PVuseName) {
@@ -561,7 +561,7 @@ var FFfileUrlToRootPath = function FFfileUrlToRootPath(PVurl) {
     var LVi;
     for (LVi = 0; LVi < LVpathSegments.length; LVi += 1) {
         var LVsegment = LVpathSegments[LVi];
-        var LVregExpOK = RegExp("^[.-a-zA-Z0-9_]{2,50}$").test(LVsegment);
+        var LVregExpOK = RegExp("^[-.a-zA-Z0-9_]{2,50}$").test(LVsegment);
         var LVdotDotFree = LVsegment.indexOf('..') == -1;
         if (! (LVregExpOK && LVdotDotFree)) {
             return { MMrc : DCfileUrlSegmentError,
