@@ -56,45 +56,57 @@ var FFlocalCacheExists = function FFlocalCacheExists (PVurl) {
 
 };
 
-var DCurlError = -10;
-var DCurlErrorMsg = "Cannot read URL";
+var DCrepoUrlError = -10;
+var DCrepoUrlErrorMsg = "Cannot read git repo URL";
 var DCghUserUrlError = -20;
-var DCghUserUrlErrorMsg = "Cannot read github user name from URL";
+var DCghUserUrlErrorMsg = "Cannot read github user name from git repo URL";
 var DCghRepoUrlError = -30;
-var DCghRepoUrlErrorMsg = "Cannot read github repo name from URL";
+var DCghRepoUrlErrorMsg = "Cannot read github repo name from git repo URL";
 // Given a github repo URL, extract user and repo
 var FFgitUrlToUserRepo = function FFgitUrlToUserRepo(PVurl) {
+    if (PVurl.slice(PVurl.length - 4) != '.git') {
+        return { MMrc : DCrepoUrlError, MMmsg : DCrepoUrlErrorMsg,
+            MMdata : PVurl };
+    }
     var LVlastColon = PVurl.lastIndexOf(':');
     var LVlastSlash = PVurl.lastIndexOf('/');
     var LVlastDot = PVurl.lastIndexOf('.');
     if (LVlastColon <= 0 || LVlastSlash <= 0 || LVlastDot <= 0) { return {
-        MMrc : DCurlError, MMmsg : DCurlErrorMsg, MMdata : PVurl }; }
+        MMrc : DCrepoUrlError, MMmsg : DCrepoUrlErrorMsg, MMdata : PVurl };
+    }
     var LVghUser = PVurl.slice(LVlastColon + 1, LVlastSlash);
     var LVghRepo = PVurl.slice(LVlastSlash + 1, LVlastDot);
     if (! RegExp("^[-a-zA-Z0-9_]{2,25}$").test(LVghUser)) { return {
-        MMrc : DCghUserUrlError, MMmsg : DCghUserUrlErrorMsg, MMdata : PVurl }; }
+        MMrc : DCghUserUrlError, MMmsg : DCghUserUrlErrorMsg, MMdata : PVurl };
+    }
     if (! RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVghRepo)) { return {
-        MMrc : DCghRepoUrlError, MMmsg : DCghRepoUrlErrorMsg, MMdata : PVurl }; }
+        MMrc : DCghRepoUrlError, MMmsg : DCghRepoUrlErrorMsg, MMdata : PVurl };
+    }
     return { MMrc : 0, MMghUser : LVghUser, MMghRepo : LVghRepo };
 }
 
-// Fetches a git URL (if necessary) and caches it
-// Does not update (pull) repo if it exists
+// - if core memory cache exists for URL, use it
+// - if local repo exists for URL and 'git status' works, load it into core memory
+//   cache and use it
+// - clone git URL and load it into core memory cache
+// does not update (pull) repo if it exists
 // returns PVk(error, repo)
 var FFgitURL = function FFgitURL(PVurl, PVk) {
+    assert(PVk.length == 2);
     if (GVrepoCache.hasOwnProperty(PVurl)) {
         console.log('cache of ' + PVurl + ' is ' + GVrepoCache[PVurl]);
-        return PVk(0, GVrepoObjectCache[PVurl]);
+        var LVrepo = GVrepoObjectCache[PVurl];
+        return PVk(null, LVrepo);
     }
     // "https://git@github.com:dbpokorny/autoclave.git"
-    var LVghUserRepo = FFgitUrlToUserRepo(PVurl);
-    if (LVghUserRepo.MMrc) {
-        return PVk(LVghUserRepo, null);
+    var LVparseUrl = FFgitUrlToUserRepo(PVurl);
+    if (LVparseUrl.MMrc) {
+        return PVk(LVparseUrl, null);
     }
-    var LVrepoPath = ("ghcache/" + LVghUserRepo.MMghUser + "/" + 
-            LVghUserRepo.MMghRepo);
-    var LVgit = RRgit(LVrepoPath);
-    LVgit.status(function (PVe, PVstatus) {
+    var LVrepoPath = ("ghcache/" + LVparseUrl.MMghUser + "/" +
+            LVparseUrl.MMghRepo);
+    var LVrepo = RRgit(LVrepoPath);
+    LVrepo.status(function (PVe, PVstatus) {
         if (PVe) {
             RRgit.clone(PVurl, LVrepoPath, function (PVe2, PVrepo) {
                 if (PVe2) {
@@ -104,15 +116,15 @@ var FFgitURL = function FFgitURL(PVurl, PVk) {
                     console.log('cloned ' + PVurl + ' to ' + LVrepoPath);
                     GVrepoCache[PVurl] = LVrepoPath;
                     GVrepoObjectCache[PVurl] = PVrepo;
-                    return PVk(0, PVrepo);
+                    return PVk(null, PVrepo);
                 }
             });
         } else {
             console.log('loaded local cache from disk for ' + PVurl + ' at ' +
                 LVrepoPath);
             GVrepoCache[PVurl] = LVrepoPath;
-            GVrepoObjectCache[PVurl] = LVgit;
-            return PVk(0, LVgit);
+            GVrepoObjectCache[PVurl] = LVrepo;
+            return PVk(null, LVrepo);
         }
     });
 };
@@ -150,8 +162,14 @@ var FFtest = function FFtest(PVgitURL) {
     FFgitURL(PVgitURL, function (PVe, PVr) {
         if (PVe) {
             console.log(PVe);
-        } else {
-            console.log(PVr);
+            return;
+        }
+        // console.log(PVr);
+        PVr.sync(function (PVerror) {
+            if (PVerror) {
+                console.log(PVerror);
+                return;
+            }
             FFwalkTreeSync(GVrepoCache[PVgitURL], function (PVx) {
                 if (PVx.slice(PVx.length - 3) == ".js") {
                     console.log('javascript file found, checking...');
@@ -165,7 +183,7 @@ var FFtest = function FFtest(PVgitURL) {
                     });
                 }
             });
-        }
+        });
     });
 };
 
