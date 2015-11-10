@@ -51,11 +51,6 @@ var GVrepoObjectCache = {};
 // map git URL to list of paths to ".js" files in the local cache
 var GVjsFiles = {};
 
-// Return true if the local cache of a given repository exists
-var FFlocalCacheExists = function FFlocalCacheExists (PVurl) {
-
-};
-
 var DCrepoUrlError = -10;
 var DCrepoUrlErrorMsg = "Cannot read git repo URL";
 var DCghUserUrlError = -20;
