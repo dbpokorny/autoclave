@@ -115,7 +115,6 @@ var FFdefStackLookup = function FFdefStackLookup(PVdefStack, PVuseName) {
 var DCdefError = -10;
 var DCdefErrorDesc = "definition for variable exists in enclosing scope: ";
 
-
 // Walk syntax tree and extract def-use data
 var FFwalkTree = function FFwalkTree(PVtree) {
     var LVscopeTree = [];
@@ -263,6 +262,7 @@ var DCundefVarError = -40;
 // PVoutput.tree - tree of def-use data
 // PVoutput.html - html data
 var FFfullScopeTest = function FFfullScopeTest(PVfilename, PVk) {
+    assert(PVk.length == 2);
     assert(typeof PVfilename == "string");
     RRfs.readFile(PVfilename, 'utf8', function (PVerror, PVdata) {
         if (PVerror) {
@@ -332,6 +332,7 @@ var FFfullScopeTest = function FFfullScopeTest(PVfilename, PVk) {
 // When finished, call PVk(error, dirsCreated) with an array of strings giving the
 // pathnames of the directories that were created
 var FFmakeDirs = function FFmakeDirs (PVpath, PVk) {
+    assert(PVk.length == 2);
     var LVslashes = []; // indexes of slashes in PVpash
     var LVi;
     for (LVi = 0; LVi < PVpath.length; LVi += 1) {
@@ -376,13 +377,6 @@ var FFbridgeFile = function FFbridgeFile(PVpath, PVdata) {
         }
     );
 };
-
-var FFrootFilename = function FFrootFilename(PVfilename) {
-    var LVdotIndex = PVfilename.indexOf('.');
-    assert(LVdotIndex > 0);
-    return PVfilename.slice(0,LVdotIndex);
-};
-
 
 //
 //  //
@@ -506,6 +500,7 @@ var FFformatScope = function FFformatScope(PVtree) {
 
 // PVk(error, draft)
 var FFtreeDraft = function FFtreeDraft(PVfilename, PVk) {
+    assert(PVk.length == 2);
     RRfs.readFile(PVfilename, 'utf8', function (PVerror, PVdata) {
         if (PVerror) {
             return PVk(PVerror, null);
@@ -528,59 +523,99 @@ var FFtreeDraft = function FFtreeDraft(PVfilename, PVk) {
     });
 };
 
-// Calls PVk( list of files written )
+var FFrootFilename = function FFrootFilename(PVfilename) {
+    var LVdotIndex = PVfilename.indexOf('.');
+    assert(LVdotIndex > 0);
+    return PVfilename.slice(0,LVdotIndex);
+};
+
+var DCfileUrlError = -10;
+var DCfileUrlErrorMsg = "Cannot read file URL";
+var DCfileUrlSegmentError = -20;
+var DCfileUrlSegmentErrorMsg = "Invalid pathname segment";
+// Given a github file URL, return the path to the local (it may or may not exist)
+var FFfileUrlToLocal = function (PVurl) {
+    if (PVurl.slice(PVurl.length - 3) != ".js") {
+        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
+            MMdata : PVurl };
+    }
+    PVurl = PVurl.slice(0,PVurl.length - 3);
+    var LVlastColon = PVurl.lastIndexOf(':');
+    if (LVlastColon <= 0) { return {
+        MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg, MMdata : PVurl };
+    }
+    var LVpathSegments = PVurl.slice(LVlastColon + 1).split('/');
+    var LVi;
+    for (LVi = 0; LVi < LVpathSegments.length - 1; LVi += 1) {
+        if (! RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVpathSegments[LVi])) {
+            return { MMrc : DCfileUrlSegmentError,
+                MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVpathSegments[LVi]
+            };
+        }
+    }
+    var LVfilename = LVpathSegments[-1];
+    var LVfilenameRoot = LVfilename.slice(0,LVfilename.length - 3);
+    var LVfilenameExt = LVfilename.slice(LVfilename.length - 3);
+    if (! (LVfilenameExt == ".js" &&
+            RegExp("^[-a-zA-Z0-9_]{2,50}$").test(LVfilenameRoot))) {
+        return { MMrc : DCfileUrlSegmentError,
+            MMmsg : DCfileUrlSegmentErrorMsg, MMdata : LVfilename
+        };
+    }
+    return { MMrc : 0, MMpath : PVurl.slice(LVlastColon + 1) };
+}
+
+
+// perform all batch operations for the file identified by url PVurl
+// calls PVk (error, list of files written)
 // Note that this may return before the files are actually written
-var FFfullBatch = function FFfullBatch(PVfilename, PVk) {
-    FFfullScopeTest(PVfilename, function (PVerror, PVscope) {
+var FFfullBatch = function FFfullBatch(PVurl, PVk) {
+    assert(PVk.length == 2);
+    var LVparseUrl = FFfileUrlToLocal(PVurl);
+    if (LVparseUrl.MMrc) {
+        return PVk(LVparseUrl, []);
+    }
+    var LVrootname = LVparseUrl.MMpath;
+    var LVfilename = "ghcache/" + LVrootname + ".js";
+    FFfullScopeTest(LVfilename, function (PVerror, PVscope) {
         if (PVerror) {
-            var LVerrorPath = 'acbuild/error/' + FFrootFilename(PVfilename);
+            var LVerrorPath = 'acbuild/error/' + LVrootname;
             var LVerrorData = RRutil.format(PVerror);
             FFbridgeFile(LVerrorPath, LVerrorData);
-            return PVk([LVerrorPath]);
+            return PVk(PVerror, [LVerrorPath]);
         }
-        FFtreeDraft(PVfilename, function (PVerror2, PVjs) {
+        FFtreeDraft(LVfilename, function (PVerror2, PVjs) {
             if (PVerror2) {
-                var LVerrorPath = 'acbuild/error/' + FFrootFilename(PVfilename);
+                var LVerrorPath = 'acbuild/error/' + LVrootname;
                 var LVerrorData = RRutil.format(PVerror2);
                 FFbridgeFile(LVerrorPath, LVerrorData);
-                return PVk([LVerrorPath]);
+                return PVk(PVerror2, [LVerrorPath]);
             }
-            var LVscopePath = 'acbuild/scope/' + FFrootFilename(PVfilename);
+            var LVscopePath = 'acbuild/scope/' + LVrootname;
             var LVscopeData = FFformatScope(PVscope.MMtree);
             FFbridgeFile(LVscopePath, LVscopeData);
-            var LVhtmlPath = 'acbuild/html/' + FFrootFilename(PVfilename) + '.html';
+            var LVhtmlPath = 'acbuild/html/' + LVrootname + '.html';
             var LVhtmlData = FFformatHtml(PVscope.MMhtmlTree);
             FFbridgeFile(LVhtmlPath, LVhtmlData);
-            var LVjsPath = 'acbuild/js/' + FFrootFilename(PVfilename) + '.js';
+            var LVjsPath = 'acbuild/js/' + LVrootname + '.js';
             FFbridgeFile(LVjsPath, PVjs);
-            return PVk([LVscopePath, LVhtmlPath, LVjsPath]);
+            return PVk(null, [LVscopePath, LVhtmlPath, LVjsPath]);
         });
     });
 };
 
-var FFfullMain = function FFfullMain(PVfilename) {
-    FFfullScopeTest(PVfilename, function (PVerror, PVscope) {
+var FFfullMain = function FFfullMain(PVurl) {
+    FFfullBatch(PVurl, function (PVerror, PVfileList) {
         if (PVerror) {
             console.log(PVerror);
+            console.log("wrote files: " + PVfileList);
             return;
         }
-        FFtreeDraft(PVfilename, function (PVerror2, PVjs) {
-            if (PVerror2) {
-                console.log(PVerror2);
-                return;
-            }
-            var LVscopePath = 'acbuild/scope/' + FFrootFilename(PVfilename);
-            var LVscopeData = FFformatScope(PVscope.MMtree);
-            FFbridgeFile(LVscopePath, LVscopeData);
-            var LVhtmlPath = 'acbuild/html/' + FFrootFilename(PVfilename) + '.html';
-            var LVhtmlData = FFformatHtml(PVscope.MMhtmlTree);
-            FFbridgeFile(LVhtmlPath, LVhtmlData);
-            var LVjsPath = 'acbuild/js/' + FFrootFilename(PVfilename) + '.js';
-            FFbridgeFile(LVjsPath, PVjs);
-            return;
-        });
+        console.log("wrote files: " + PVfileList);
     });
 };
+
+// Usage: node tree.js git@github.com:user/repo/path/to/file.js
 
 if (require.main === module && process.argv.length >= 3) {
     FFfullMain(process.argv[2]);

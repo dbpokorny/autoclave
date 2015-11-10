@@ -26,7 +26,7 @@ var FFgetItem = function FFgetItem(PVx, PVy) {
             return LVx;
         }
     } else {
-        var LVx = PVx[PVy.toString() + '`'];
+        var LVx = PVx['`' + PVy.toString() + '`'];
         return LVx;
     }
 };
@@ -37,7 +37,7 @@ var FFsetItem = function FFsetItem(PVx, PVy, PVz) {
     if (GVsetOK.hasOwnProperty('#' + PVy) || (! isNaN(PVy))) {
         PVx[PVy] = PVz;
     } else {
-        PVx[PVy.toString() + '`'] = PVz;
+        PVx['`' + PVy.toString() + '`'] = PVz;
     }
 };
 
@@ -45,7 +45,7 @@ var FFhasItem = function FFhasItem(PVx, PVy) {
     if (GVpassthrough.hasOwnProperty('#' + PVy) || (! isNaN(PVy))) {
         return PVx.hasOwnProperty(PVy);
     } else {
-        return PVx.hasOwnProperty(PVy.toString() + '`');
+        return PVx.hasOwnProperty('`' + PVy.toString() + '`');
     }
 };
 
@@ -57,8 +57,9 @@ var FFhasItemCurry = function FFhasItemCurry(PVx) {
 // keys == Object.keys
 var FFkeys = function FFkeys (PVobj) {
     return Object.keys(PVobj).filter(
-        function (PVx) { return (! isNaN(PVx)) || PVx[PVx.length - 1] == '`'; }).map(
-        function (PVx) { return isNaN(PVx) ? PVx.slice(0,PVx.length - 1) : PVx; });
+        function (PVx) { return (! isNaN(PVx)) || (typeof PVx == "string" &&
+            PVx.length > 0 && PVx[0] == '`' && PVx[PVx.length - 1] == '`'); }).map(
+        function (PVx) { return isNaN(PVx) ? PVx.slice(1,PVx.length - 1) : PVx; });
 };
 
 var DCfileUrlError = -10;

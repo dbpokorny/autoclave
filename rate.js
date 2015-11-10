@@ -21,3 +21,11 @@
 // - inform the user that a rate limit cap has been reached
 // - reschedule with setTimeout(function () { ... }, LVpunchCardresult.MMdelay)
 // 
+
+
+// Rate-limited actions
+//
+// - reading/writing files
+//   it is possible to read/write any URL. This is translated by the runtime to
+//   reads and writes against the filesystem in a subdirectory of ghcache (in the
+//   git repository itself)

@@ -62,8 +62,8 @@ var DCghUserUrlError = -20;
 var DCghUserUrlErrorMsg = "Cannot read github user name from URL";
 var DCghRepoUrlError = -30;
 var DCghRepoUrlErrorMsg = "Cannot read github repo name from URL";
-// Given a github repo URL, return the pair [user,repo]
-var FFurlToUserRepo = function (PVurl) {
+// Given a github repo URL, extract user and repo
+var FFgitUrlToUserRepo = function FFgitUrlToUserRepo(PVurl) {
     var LVlastColon = PVurl.lastIndexOf(':');
     var LVlastSlash = PVurl.lastIndexOf('/');
     var LVlastDot = PVurl.lastIndexOf('.');
@@ -78,6 +78,8 @@ var FFurlToUserRepo = function (PVurl) {
     return { MMrc : 0, MMghUser : LVghUser, MMghRepo : LVghRepo };
 }
 
+
+
 // Fetches a git URL (if necessary) and caches it
 // Does not update (pull) repo if it exists
 // returns PVk(error, repo)
@@ -87,7 +89,7 @@ var FFgitURL = function FFgitURL(PVurl, PVk) {
         return PVk(0, GVrepoObjectCache[PVurl]);
     }
     // "https://git@github.com:dbpokorny/autoclave.git"
-    var LVghUserRepo = FFurlToUserRepo(PVurl);
+    var LVghUserRepo = FFgitUrlToUserRepo(PVurl);
     if (LVghUserRepo.MMrc) {
         return PVk(LVghUserRepo, null);
     }
