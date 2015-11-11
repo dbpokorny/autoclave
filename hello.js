@@ -1,6 +1,7 @@
-var e = function e(a,b) {
-    var f = function f(b,d) {
-        x = [0xafe];
-        ;
-    };
-};
+console.log("hello, world");
+
+fs.writeFile('foofile','barmsg', function (PVe) {
+    if (PVe) {
+        console.log(PVresult);
+    }
+});

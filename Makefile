@@ -2,7 +2,7 @@
 
 LOC=acbuild/js/cache/gh/__local__/__local__
 
-local: $(LOC)/token.js $(LOC)/table.js $(LOC)/tree.js
+local: $(LOC)/token.js $(LOC)/table.js $(LOC)/tree.js $(LOC)/hello.js
 
 README.html: README.md
 	ruby -e "require 'github/markup'; puts GitHub::Markup.render('README.md',File.read('README.md'))" > README.html
@@ -15,6 +15,9 @@ $(LOC)/table.js: table.js tree.js
 
 $(LOC)/tree.js: tree.js
 	node tree.js tree.js
+
+$(LOC)/hello.js: tree.js hello.js
+	node tree.js hello.js
 
 clean:
 	@rm -rf acbuild

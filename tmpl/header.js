@@ -1,6 +1,6 @@
 "use strict";
 var ACpassStrings = ["apply", "concat","filter", "forEach",
-   "indexOf", "join", "length", "map",
+   "indexOf", "join", "length", "log", "map",
    "max", "min", "pop", "push", "reduce", "reduceRight",
    "replace", "reverse", "slice", "sort", "splice", "split", "toString",
 ];
@@ -8,6 +8,7 @@ var ACpass = {};
 ACpassStrings.forEach(function (PVk) { ACpass["#" + PVk] = 1; });
 var ACisNaN = isNaN;
 
+var ACconsole = console;
 var ACgetItem = function ACgetItem(PVx, PVy) {
     if (ACpass.hasOwnProperty("#" + PVy) || (! ACisNaN(PVy))) {
         var LVx = PVx[PVy];
@@ -44,8 +45,8 @@ var ACfileUrlSegmentError = -20;
 var ACfileUrlSegmentErrorMsg = "Invalid pathname segment";
 var ACcheckFilePath = function ACcheckFilePath(PVsegments) {
     var LVi;
-    for (LVi = 0; LVi < LVsegments.length; LVi += 1) {
-        var LVsegment = LVsegments[LVi];
+    for (LVi = 0; LVi < PVsegments.length; LVi += 1) {
+        var LVsegment = PVsegments[LVi];
         var LVregExpOK = RegExp("^[-.a-zA-Z0-9_]{2,50}$").test(LVsegment);
         var LVdotDotFree = LVsegment.indexOf("..") == -1;
         if (! (LVregExpOK && LVdotDotFree)) {
@@ -71,7 +72,7 @@ var ACparseFileUrl = function ACparseFileUrl(PVurl) {
     }
     var LVdomain = PVurl.slice(4,LVcolon);
     if (! ACnetworkCode.hasOwnProperty(LVdomain)) {
-        return { MMrc : DCunknownDomainError, MMmsg : DCunknownDomainErrorMsg,
+        return { MMrc : ACunknownDomainError, MMmsg : ACunknownDomainErrorMsg,
             MMurl : PVurl
         };
     }
@@ -90,45 +91,40 @@ var ACparseFileUrl = function ACparseFileUrl(PVurl) {
         MMpathname : PVurl.slice(LVlastColon + 1) };
 };
 
-var ACconsole = console;
-console = {"`log`"  : function (PVx) { ACconsole.log(PVx); }};
 
-ACrequire = require;
-require = function (PVx) {
-    var LVparse = ACparseFileUrl(PVx);
-    if (LVparse.MMrc == 0) {
-        var LVpath = ACreqRoot + "/" + LVparse.MMnet + "/" + LVparse.MMpathname;
-        return ACrequire(LVpath);
-    }
-    ACconsole.log("require takes a URL argument");
-    ACconsole.log(LVparse);
-    return LVparse;
-};
-require["`main`"] = {};
-require["`main`"]["`id`"] = ACrequire.main.id;
-
-var ACfsRoot = "' + LVfsRoot + '";
-var ACfs = fs;
+var ACfs = require('fs');
 fs = {"`readFile`" : function (PV1, PV2, PV3) {
-        var LVparse = ACcheckFilePath(PV1.toString());
+        var LVparse = ACcheckFilePath(PV1.toString().split('/'));
         if (LVparse.MMrc == 0) {
-            var LVpath = ACfsRoot + "/" + LVparse.MMpathname;
-            return ACfs.readFile(LVpath, PV2, PV3);
+            var LVpath = ACfsRoot + "/" + PV1;
+            if (PV3 == undefined) {
+                return ACfs.readFile(LVpath, PV2);
+            } else {
+                return ACfs.readFile(LVpath, PV2, PV3);
+            }
         }
         ACconsole.log('invalid pathname: ' + PV1.toString());
     },
     "`writeFile`" : function (PV1, PV2, PV3, PV4) {
-        var LVparse = ACcheckFilePath(PV1.toString());
+        var LVparse = ACcheckFilePath(PV1.toString().split('/'));
         if (LVparse.MMrc == 0) {
-            var LVpath = ACfsRoot + "/" + LVparse.MMpathname;
-            return ACfs.writeFile(LVpath, PV2, PV3, PV4);
+            var LVpath = ACfsRoot + "/" + PV1;
+            ACconsole.log('writing to ' + LVpath);
+            if (PV4 == undefined) {
+                return ACfs.writeFile(LVpath, PV2, PV3);
+            } else {
+                return ACfs.writeFile(LVpath, PV2, PV3, PV4);
+            }
         }
         ACconsole.log('invalid pathname: ' + PV1.toString());
     }
 };
 
 var ACprocess = process;
-process = {"`argv`" : ACprocess.argv.slice(0,ACprocess.argv.length)};
+process = {"`argv`" : ACprocess.argv.slice(0,ACprocess.argv.length),
+    "_tickCallback" : ACprocess._tickCallback,
+    "nextTick" : ACprocess.nextTick,
+};
 
 var ACdecodeURI = decodeURI;
 decodeURI = function (PVx) { ACdecodeURI(PVx); };
@@ -148,26 +144,29 @@ escape = function (PVx) { ACescape(PVx); };
 var ACunescape = unescape;
 unescape = function (PVx) { unescape(PVx); };
 
-var ACJSON = JSON;
-JSON = { "`parse`" : function (PVx) { return JSON.parse(PVx); },
-    "`stringify`" : function (PVx) { return JSON.stringify(PVx); }
-};
 
-var ACregExp = RegExp;
+var ACRegExp = RegExp;
 RegExp = function (PV1, PV2) { return ACRegExp(PV1, PV2); };
 
-var ACobject = Object;
-Object = { "`keys`" : function (PVobj) {
-   return ACobject.keys(PVobj).filter( 
-       function (PVx) { return (! ACisNaN(PVx)) || (typeof PVx == "string" &&
-           PVx.length > 0 && PVx[0] == "`" && PVx[PVx.length - 1] == "`"); }).map(
-       function (PVx) { return ACisNaN(PVx) ? PVx.slice(1,PVx.length - 1) : PVx; });
-}};
 
-var ACpath = path;
+var ACpath = require('path');
 path = { "`resolve`" : function (PVx) {
    return PVx; }
 };
 
 var ACmodule = module;
 module = {"`id`" : ACmodule.id};
+
+ACrequire = require;
+require = function (PVx) {
+    var LVparse = ACparseFileUrl(PVx);
+    if (LVparse.MMrc == 0) {
+        var LVpath = ACreqRoot + "/" + LVparse.MMnet + "/" + LVparse.MMpathname;
+        return ACrequire(LVpath);
+    }
+    ACconsole.log("require takes a URL argument");
+    ACconsole.log(LVparse);
+    return LVparse;
+};
+require["`main`"] = {};
+require["`main`"]["`id`"] = ACrequire.main.id;

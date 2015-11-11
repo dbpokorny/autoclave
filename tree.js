@@ -150,6 +150,7 @@ var FFwalkTree = function FFwalkTree(PVtree) {
         '#encodeURI':'global',
         '#encodeURIComponent':'global',
         '#escape':'global',
+        '#fs':'global',
         '#module':'global',
         '#process':'global',
         '#require':'global',
@@ -725,6 +726,8 @@ var FFbatch = function FFbatch(PVurl, PVk) {
             FFbridgeFile(LVhtmlPath, LVhtmlData);
             var LVjsPath = 'acbuild/js/' + LVpathname + '.js';
             FFbridgeFile(LVjsPath, PVjs);
+            FFmakeDirs('filesys/' + LVparse.MMnet + "/" + LVparse.MMuser + "/" +
+                LVparse.MMrepo, function (PVe, PVf) {;});
             return PVk(null, [LVscopePath, LVhtmlPath, LVjsPath]);
         });
     });
