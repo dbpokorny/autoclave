@@ -104,7 +104,9 @@ var FFscopeParse = function FFscopeParse(PVinput) {
         if (DCs5Ids.hasOwnProperty('#' + LVtoken.MMchars)) {
             if (! (LVi > 0 && LVtokens[LVi - 1].MMchars == "instanceof")) {
                 return { MMrc : DCidError, MMmsg :
-                    "[S5] Illegal use of identifier: " + LVtoken.MMchars
+                    "[S5] Illegal use of identifier: " + LVtoken.MMchars,
+                        MMlineno : LVtoken.MMlineno,
+                        MMcolno : LVtoken.MMcolno
                 };
             }
         }
@@ -113,9 +115,10 @@ var FFscopeParse = function FFscopeParse(PVinput) {
             var LVj;
             for (LVj = 0; LVj < LVfollow.length; LVj += 1) {
                 if (LVtokens[LVi + 1 + LVj].MMchars != LVfollow[LVj]) {
-                    var LVwrongToken = LVtokens[LVi + 1 + LVj].MMchars;
                     return { MMrc : DCidError, MMmsg :
-                        "[S7] Illegal use of identifier: " + LVwrongToken
+                        "[S7] Illegal use of identifier: " + LVtoken.MMchars,
+                            MMlineno : LVtoken.MMlineno,
+                            MMcolno : LVtoken.MMcolno
                     };
                 }
             }
