@@ -4,7 +4,7 @@
 // 1 token data: token type, line number, column number, length in chars, raw
 //   string data, offset within input
 //
-// - a token may not start with "AC", which is reserved for the autoclave runtime
+// T1 a token may not start with "AC", which is reserved for the autoclave runtime
 
 "use strict";
 
@@ -397,6 +397,7 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
             }
             LVj = LVlongestId;
             var LVidCand = PVinput.slice(LVi, LVi + LVj);
+            // Enforce T1
             if (GVinvalidIds[LVidCand] == 1 || LVidCand.slice(0,2) == "AC") {
                 return {
                     MMrc : DCinvalidIdError, MMerror : "Invalid identifier: "

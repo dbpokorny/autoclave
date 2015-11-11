@@ -78,16 +78,16 @@ var FFformatHtml = function FFformatHtml(PVtree) {
 // S4 Any compound statement (CS) introduces a new scope which is identified by an
 //    offset and length corresponding to the extent of "{ ... }" in the source
 //    code
-// S5 The only legal use of the tokens "Array", "RegExp" is in the right hand side
+// S5 The only legal use of the tokens "Array", is in the right hand side
 //    argument to the operator "instanceof"
 // S6 Replace require(pathname) with require(URL) which takes a URL argument
+// S7 The only legal use of the token "console" is before tokens "." and "log"
 var FFformatTokenRef = RRtable.MMformatTokenRef;
 
 var DCidError = -10;
 
-var DCrestrictedStrings = ['Array', 'RegExp'];
-var DCrestrictedIds = {};
-DCrestrictedStrings.forEach(function (PVx) { DCrestrictedIds['#' + PVx] = 1; });
+var DCs5Ids = {"#Array" : 1};
+var DCs7Ids = {"#console" : [".", "log"]};
 
 var FFscopeParse = function FFscopeParse(PVinput) {
     var LVtokSym = RRtoken.MMtokSym(PVinput);
@@ -101,11 +101,23 @@ var FFscopeParse = function FFscopeParse(PVinput) {
     var LVi;
     for (LVi = 0; LVi < LVtokens.length; LVi += 1) {
         var LVtoken = LVtokens[LVi];
-        if (DCrestrictedStrings.hasOwnProperty('#' + LVtoken.MMchars)) {
+        if (DCs5Ids.hasOwnProperty('#' + LVtoken.MMchars)) {
             if (! (LVi > 0 && LVtokens[LVi - 1].MMchars == "instanceof")) {
                 return { MMrc : DCidError, MMmsg :
-                    "Illegal use of identifier: " + LVtoken.MMchars
+                    "[S5] Illegal use of identifier: " + LVtoken.MMchars
                 };
+            }
+        }
+        if (DCs7Ids.hasOwnProperty('#' + LVtoken.MMchars)) {
+            var LVfollow = DCs7Ids['#' + LVtoken.MMchars];
+            var LVj;
+            for (LVj = 0; LVj < LVfollow.length; LVj += 1) {
+                if (LVtokens[LVi + 1 + LVj].MMchars != LVfollow[LVj]) {
+                    var LVwrongToken = LVtokens[LVi + 1 + LVj].MMchars;
+                    return { MMrc : DCidError, MMmsg :
+                        "[S7] Illegal use of identifier: " + LVwrongToken
+                    };
+                }
             }
         }
     }
