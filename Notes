@@ -1,5 +1,8 @@
 1. The scanner / lexer converts "-1" to a number token, so "(x - 1)" is a valid
 expression but "(x-1)" is not
-2. "keys" means "Object.keys" and this function is intercepted so as to present
-the illusion of not executing in a sandbox
-3. npm install
+2. npm install
+3. A "git URL" is a string ending in ".git" such that the prefix "ssh://" can be
+added, passed to 'git clone', and a repositry will be created.
+4. A "git file URL" is a git URL such that ".git" has been removed and a pathname
+to a file has been appended starting with a slash relative to the root of the git
+repository, for example 'git@github.com:user/repo/path/to/file.js'.

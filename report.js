@@ -29,3 +29,15 @@
 // - what node modules does it require?
 //   - for each node module required, is there an entry in package.json?
 // - what local ('./path/to/file.js') files does it require?
+//
+// # User interaction
+//
+// The button "cache file" clones the git repository the file resides in and
+// performs tree.batch.
+//
+// The button "test file"
+// request()s the file (resolving
+// git@gitlab.com:autoclave/autoclave/foo.js to
+// https://gitlab.com/autoclave/stub/raw/a3d.../foo/bar.js
+// where a3d... = a3d19f82375c6be0fc6724a1f28c89c763c885d7 is the commit hash of
+// master HEAD.

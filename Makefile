@@ -1,25 +1,26 @@
 .PHONY: clean
 
-all: acbuild/js/token.js acbuild/js/table.js acbuild/js/tree.js
+LOC=acbuild/js/cache/gh/__local__/__local__
+
+local: $(LOC)/token.js $(LOC)/table.js $(LOC)/tree.js
 
 README.html: README.md
 	ruby -e "require 'github/markup'; puts GitHub::Markup.render('README.md',File.read('README.md'))" > README.html
 
-acbuild/js/token.js: token.js tree.js
+$(LOC)/token.js: token.js tree.js
 	node tree.js token.js
 
-acbuild/js/table.js: table.js tree.js
+$(LOC)/table.js: table.js tree.js
 	node tree.js table.js
 
-acbuild/js/tree.js: tree.js
+$(LOC)/tree.js: tree.js
 	node tree.js tree.js
 
 clean:
-	@rm -rf acbuild/error/ghcache
-	@rm -rf acbuild/html/ghcache
-	@rm -rf acbuild/scope/ghcache
-	@rm -rf acbuild/js/ghcache
-	@rm -f  acbuild/html/*.html
-	@rm -f  acbuild/scope/*
-	@rm -f  acbuild/js/*.js
+	@rm -rf acbuild
+	@mkdir acbuild
+	@mkdir acbuild/error
+	@mkdir acbuild/html 
+	@mkdir acbuild/scope
+	@mkdir acbuild/js   
 	@rm -f  README.html

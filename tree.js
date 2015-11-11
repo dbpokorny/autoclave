@@ -80,8 +80,7 @@ var FFformatHtml = function FFformatHtml(PVtree) {
 //    code
 // S5 The only legal use of the tokens "Array", "RegExp" is in the right hand side
 //    argument to the operator "instanceof"
-// S6 Replace require(pathname) with require(URL) which take a URL such as
-//    git@github.com:user/repo/path/to/file.js and loads the local cache
+// S6 Replace require(pathname) with require(URL) which takes a URL argument
 var FFformatTokenRef = RRtable.MMformatTokenRef;
 
 var DCidError = -10;
@@ -335,7 +334,7 @@ var FFfullScopeTest = function FFfullScopeTest(PVfilename, PVk) {
                 MMrc : DCundefVarError,
                 MMmsg : "undefined variables",
                 MMfile : PVfilename,
-                MMdata : LVwalkResult
+                MMdata : LVwalkResult.MMundef
             }, null);
         }
         var LVtokenRefLinks = LVwalkResult.MMtokenRefLinks;
@@ -366,6 +365,7 @@ var FFfullScopeTest = function FFfullScopeTest(PVfilename, PVk) {
 // When finished, call PVk(error, dirsCreated) with an array of strings giving the
 // pathnames of the directories that were created
 var FFmakeDirs = function FFmakeDirs (PVpath, PVk) {
+    // console.log("makedirs " + PVpath);
     assert(PVk.length == 2);
     var LVslashes = []; // indexes of slashes in PVpash
     var LVi;
@@ -380,36 +380,44 @@ var FFmakeDirs = function FFmakeDirs (PVpath, PVk) {
         var LVpartial = PVpath.slice(0,LVslashes[LVi]);
         LVpartials.push(LVpartial);
     }
+    LVpartials.push(PVpath);
     var LVmdHelper = function LVmdHelper () {
         if (LVpartials.length == 0) {
             return PVk(null, LVcreated);
         }
         var LVpartial = LVpartials[0];
-        RRfs.exists(LVpartial, function (PVexists) {
-            if (! PVexists) {
-                RRfs.mkdir(function (PVerror) {
-                    if (PVerror) {
-                        return PVk(PVerror, LVcreated);
-                    }
-                    LVpartials = LVpartials.slice(1);
-                    return LVmdHelper();
-                });
-            }
+        return RRfs.mkdir(LVpartial, function (PVerror) {
+            LVpartials = LVpartials.slice(1);
+            return LVmdHelper();
         });
     };
-    LVmdHelper();
+    return LVmdHelper();
+};
+
+var FFremoveLastPathComponent = function FFremoveLastPathComponent (PVpath) {
+    var LVlastSlash = PVpath.lastIndexOf('/');
+    return PVpath.slice(0, LVlastSlash);
 };
 
 // Build a bridge to the file
-var FFbridgeFile = function FFbridgeFile(PVpath, PVdata) {
+// PVk(error)
+var FFbridgeFile = function FFbridgeFile(PVpath, PVdata, PVk) {
+    if (PVk == undefined) {
+        PVk = function (PVx) { if (PVx) { console.log(PVx); } };
+    }
     RRfs.writeFile(PVpath, PVdata,
         function (PVerror) {
             if (PVerror) {
-                return FFmakeDirs(PVpath, function (PVerror2, PVdirs) {
-                    if (! PVerror2) {
-                        RRfs.writeFile(PVpath, PVdata);
+                var LVdirPath = FFremoveLastPathComponent(PVpath);
+                return FFmakeDirs(LVdirPath, function (PVe2, PVdirs) {
+                    if (PVe2) {
+                        return PVk(PVe2);
+                    } else {
+                        return RRfs.writeFile(PVpath, PVdata, PVk);
                     }
                 });
+            } else {
+                PVk(null);
             }
         }
     );
@@ -535,40 +543,112 @@ var FFformatScope = function FFformatScope(PVtree) {
     return LVindented.join(" ");
 };
 
-var FFfileUrlToUserRepo = function FFfileUrlToUserRepo(PVurl) {
+// map network code to network domain
+var GVnetDomain = { gh : 'github.com', gl : 'gitlab.com' };
+// map domain to network code
+var GVnetworkCode = { "github.com" : "gh", "gitlab.com" : "gl" };
+
+var DCfileUrlSegmentError = -20;
+var DCfileUrlSegmentErrorMsg = "Invalid pathname segment";
+var FFcheckFilePath = function FFcheckFilePath(PVsegments) {
+    var LVi;
+    for (LVi = 0; LVi < PVsegments.length; LVi += 1) {
+        var LVsegment = PVsegments[LVi];
+        var LVregExpOK = RegExp("^[-.a-zA-Z0-9_]{2,50}$").test(LVsegment);
+        var LVdotDotFree = LVsegment.indexOf("..") == -1;
+        if (! (LVregExpOK && LVdotDotFree)) {
+            return { MMrc : DCfileUrlSegmentError,
+                MMmsg : DCfileUrlSegmentErrorMsg, MMsegment : LVsegment
+            };
+        }
+    }
+    return { MMrc : 0 };
+};
+
+var DCfileUrlError = -10;
+var DCfileUrlErrorMsg = "Cannot read file URL";
+var DCunknownDomainError = -30;
+var DCunknownDomainErrorMsg = "Unknown domain";
+// Extract the network, user, repo, and pathname from a git file URL
+var FFparseFileUrl = function FFparseFileUrl(PVurl) {
+    var LVcolon = PVurl.indexOf(":");
+    if (LVcolon == -1 || PVurl.slice(0,4) != "git@") {
+        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
+            MMurl : PVurl
+        };
+    }
+    var LVdomain = PVurl.slice(4,LVcolon);
+    if (! GVnetworkCode.hasOwnProperty(LVdomain)) {
+        return { MMrc : DCunknownDomainError, MMmsg : DCunknownDomainErrorMsg,
+            MMurl : PVurl
+        };
+    }
+    var LVsegments = PVurl.slice(LVcolon + 1).split("/");
+    if (LVsegments.length < 2) {
+        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
+            MMurl : PVurl
+        };
+    }
+    var LVcheckPath = FFcheckFilePath(LVsegments);
+    if (LVcheckPath.MMrc) {
+        return { MMrc : DCfileUrlError, MMdata : LVcheckPath };
+    }
+    return { MMrc : 0, MMnet : GVnetworkCode[LVdomain],
+        MMuser : LVsegments[0], MMrepo : LVsegments[1],
+        MMpathname : PVurl.slice(LVcolon + 1) };
+};
+
+var DCgitUrlError = -10;
+var DCgitUrlErrorMsg = "Cannot read git URL";
+var DCnameError = -20;
+var DCnameErrorMsg = "Invalid user/repo name";
+// Given a git URL, extract user and repo
+var FFparseGitUrl = function FFparseGitUrl(PVurl) {
+    if (PVurl.slice(PVurl.length - 4) != '.git' ||
+            PVurl.slice(0,4) != 'git@') {
+        return { MMrc : DCgitUrlError, MMmsg : DCgitUrlErrorMsg,
+            MMdata : PVurl };
+    }
     var LVlastColon = PVurl.lastIndexOf(':');
-    if (LVlastColon <= 0) {
-        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
+    var LVlastSlash = PVurl.lastIndexOf('/');
+    var LVlastDot = PVurl.lastIndexOf('.');
+    if (LVlastColon <= 0 || LVlastSlash <= 0 || LVlastDot <= 0) { return {
+        MMrc : DCgitUrlError, MMmsg : DCgitUrlErrorMsg, MMdata : PVurl };
+    }
+    var LVdomain = PVurl.slice(4, LVlastColon);
+    if (! GVnetworkCode.hasOwnProperty(LVdomain)) {
+        return { MMrc : DCunknownDomainError, MMmsg : DCunknownDomainErrorMsg,
             MMurl : PVurl
         };
     }
-    var LVpathSegments = PVurl.slice(LVlastColon + 1).split('/');
-    if (LVpathSegments.length < 2) {
-        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
-            MMurl : PVurl
-        };
-    }
-    LVuser = LVpathSegments[0];
-    LVrepo = LVpathSegments[1];
+    var LVuser = PVurl.slice(LVlastColon + 1, LVlastSlash);
+    var LVrepo = PVurl.slice(LVlastSlash + 1, LVlastDot);
     var LVuserREok = RegExp("^[-.a-zA-Z0-9_]{2,25}$").test(LVuser);
     var LVuserDDok = LVuser.indexOf('..') == -1;
     var LVrepoREok = RegExp("^[-.a-zA-Z0-9_]{2,25}$").test(LVrepo);
     var LVrepoDDok = LVrepo.indexOf('..') == -1;
-    if (! (LVuserREok && LVuserDDok && LVrepoREok && && LVrepoDDok)) { return {
-        MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg, MMdata : PVurl };
+    if (! (LVuserREok && LVuserDDok && LVrepoREok && LVrepoDDok)) { return {
+        MMrc : DCnameError, MMmsg : DCnameErrorMsg, MMdata : PVurl };
     }
-    return { MMrc : 0, MMuser : LVuser, MMrepo : LVrepo };
+    return { MMrc : 0, MMnet : GVnetworkCode[LVdomain],
+        MMuser : LVuser, MMrepo : LVrepo };
 };
+
+
+var GVheaderCache = null;
 
 // PVk(error, draft)
 var FFtreeDraft = function FFtreeDraft(PVurl, PVfilename, PVk) {
     assert(PVk.length == 2);
-    var LVparse = FFfileUrlToUserRepo(PVurl);
+    var LVparse = FFparseFileUrl(PVurl);
     if (LVparse.MMrc) {
         return PVk(LVparse, null);
     }
     var LVuser = LVparse.MMuser;
     var LVrepo = LVparse.MMrepo;
+    var LVnet = LVparse.MMnet;
+    var LVdomain = GVnetDomain[LVnet];
+    var LVfsRoot = RRpath.resolve('filesys/' + LVnet + '/' + LVuser + '/' + LVrepo);
     RRfs.readFile(PVfilename, 'utf8', function (PVerror, PVdata) {
         if (PVerror) {
             return PVk(PVerror, null);
@@ -578,202 +658,31 @@ var FFtreeDraft = function FFtreeDraft(PVurl, PVfilename, PVk) {
             return PVk(LVbundle, null);
         }
         var LVdraft = FFformatDraft(LVbundle.MMdata5);
-        var LVheader = (
-'"use strict";\n' +
-'var ACpassStrings = ["apply", "concat","filter", "forEach",\n' +
-'   "indexOf", "join", "length", "map",\n' +
-'   "max", "min", "pop", "push", "reduce", "reduceRight",\n' +
-'   "replace", "reverse", "slice", "sort", "splice", "split", "toString",\n' +
-'];\n' +
-'var ACpass = {};\n' +
-'ACpassStrings.forEach(function (PVk) { ACpass["#" + PVk] = 1; });\n' +
-'var ACisNaN = isNaN;\n' +
-'\n' +
-'var ACgetItem = function ACgetItem(PVx, PVy) {\n' +
-'    if (ACpass.hasOwnProperty("#" + PVy) || (! ACisNaN(PVy))) {\n' +
-'        var LVx = PVx[PVy];\n' +
-'        if (typeof LVx == "function") {\n' +
-'            return LVx.bind(PVx);\n' +
-'        } else {\n' +
-'            return LVx;\n' +
-'        }\n' +
-'    } else {\n' +
-'        var LVx = PVx["`" + PVy.toString() + "`"];\n' +
-'        return LVx;\n' +
-'    }\n' +
-'};\n' +
-'var ACsetItem = function ACsetItem(PVx, PVy, PVz) {\n' +
-'    if (! ACisNaN(PVy)) {\n' +
-'        PVx[PVy] = PVz;\n' +
-'    } else {\n' +
-'        PVx["`" + PVy.toString() + "`"] = PVz;\n' +
-'    }\n' +
-'};\n' +
-'var AChasItem = function AChasItem(PVx, PVy) {\n' +
-'    if (ACpassthrough.hasOwnProperty("#" + PVy) || (! ACisNaN(PVy))) {\n' +
-'        return PVx.hasOwnProperty(PVy);\n' +
-'    } else {\n' +
-'        return PVx.hasOwnProperty("`" + PVy.toString() + "`");\n' +
-'    }\n' +
-'};\n' +
-'var AChasItemCurry = function AChasItemCurry(PVx) {\n' +
-'    var LVf = function f (PVy) { return AChasItem(PVx,PVy); };\n' +
-'    return LVf;\n' +
-'};\n' +
-'\n' +
-'var ACfileUrlError = -10;\n' +
-'var ACfileUrlErrorMsg = "Cannot read file URL";\n' +
-'var ACfileUrlSegmentError = -20;\n' +
-'var ACfileUrlSegmentErrorMsg = "Invalid pathname segment";\n' +
-'// Given a github file URL, return the main path to the local\n' +
-'// (it may or may not exist)\n' +
-'var ACfileUrlToPath = function ACfileUrlToPath(PVurl) {\n' +
-'    var LVlastColon = PVurl.lastIndexOf(":");\n' +
-'    if (LVlastColon <= 0) {\n' +
-'        return { MMrc : ACfileUrlError, MMmsg : ACfileUrlErrorMsg,\n' +
-'            MMurl : PVurl\n' +
-'        };\n' +
-'    }\n' +
-'    var LVpathSegments = PVurl.slice(LVlastColon + 1).split("/");\n' +
-'    if (LVpathSegments.length == 0) {\n' +
-'        return { MMrc : ACfileUrlError, MMmsg : ACfileUrlErrorMsg,\n' +
-'            MMurl : PVurl\n' +
-'        };\n' +
-'    }\n' +
-'    var LVi;\n' +
-'    for (LVi = 0; LVi < LVpathSegments.length; LVi += 1) {\n' +
-'        var LVsegment = LVpathSegments[LVi];\n' +
-'        var LVregExpOK = RegExp("^[.-a-zA-Z0-9_]{2,50}$").test(LVsegment);\n' +
-'        var LVdotDotFree = LVsegment.indexOf("..") == -1;\n' +
-'        if (! (LVregExpOK && LVdotDotFree)) {\n' +
-'            return { MMrc : ACfileUrlSegmentError,\n' +
-'                MMmsg : ACfileUrlSegmentErrorMsg, MMsegment : LVsegment\n' +
-'            };\n' +
-'        }\n' +
-'    }\n' +
-'    return { MMrc : 0, MMpath : PVurl.slice(LVlastColon + 1) };\n' +
-'};\n' +
-'var ACconsole = console;\n' +
-'console = {"`log`"  : function (PVx) { ACconsole.log(PVx); }};\n' +
-
+        var LVpreHeader = (
 'var ACreqRoot = "' + RRpath.resolve('acbuild/js') + '";\n' +
-'ACrequire = require;\n' +
-'require = function (PVx) {\n' +
-'    var LVpathResult = ACfileUrlToPath(PVx);\n' +
-'    if (LVpathResult.MMrc == 0) {\n' +
-'        var LVpath = ACreqRoot + "/" + LVpathResult.MMpath;\n' +
-'        return ACrequire(LVpath);\n' +
-'    }\n' +
-'    ACconsole.log("require takes a URL argument");\n' +
-'    ACconsole.log(LVpathResult);\n' +
-'    return LVpathResult;\n' +
-'};\n' +
-'require["`main`"] = {};\n' +
-'require["`main`"]["`id`"] = ACrequire.main.id;\n' +
-
-'var ACfsRoot = "' + RRpath.resolve('filesys') + '";\n' +
-'var ACfs = fs;\n' +
-'fs = {"`readFile`" : function (PV1, PV2, PV3) {\n' +
-'        var LVpathResult = ACfileUrlToPath(PV1);\n' +
-'        if (LVpathResult.MMrc == 0) {\n' +
-'            var LVpath = ACfsRoot + "/" + LVpathResult.MMpath;\n' +
-'            return ACfs.readFile(LVpath, PV2, PV3);\n' +
-'        }\n' +
-'    },\n' +
-'    "`writeFile`" : function (PV1, PV2, PV3, PV4) {\n' +
-'        var LVpathResult = ACfileUrlToPath(PV1);\n' +
-'        if (LVpathResult.MMrc == 0) {\n' +
-'            var LVpath = ACfsRoot + "/" + LVpathResult.MMpath;\n' +
-'            return ACfs.writeFile(LVpath, PV2, PV3, PV4);\n' +
-'        }\n' +
-'    }\n' +
-'};\n' +
-'\n' +
-
-'var ACprocess = process;\n' +
-'process = {"`argv`" : ACprocess.argv.slice(0,ACprocess.argv.length)};\n' +
-
-'var ACdecodeURI = decodeURI;\n' +
-'decodeURI = function (PVx) { ACdecodeURI(PVx); };\n' +
-
-'var ACdecodeURIComponent = decodeURIComponent;\n' +
-'decodeURIComponent = function (PVx) { ACdecodeURIComponent(PVx); };\n' +
-
-'var ACencodeURI = encodeURI;\n' +
-'encodeURI = function (PVx) { ACencodeURI(PVx); };\n' +
-
-'var ACencodeURIComponent = encodeURIComponent;\n' +
-'encodeURIComponent = function (PVx) { encodeURIComponent(PVx); };\n' +
-
-'var ACescape = escape;\n' +
-'escape = function (PVx) { ACescape(PVx); };\n' +
-
-'var ACunescape = unescape;\n' +
-'unescape = function (PVx) { unescape(PVx); };\n' +
-
-'var ACJSON = JSON;\n' +
-'JSON = { "`parse`" : function (PVx) { return JSON.parse(PVx); },\n' +
-    '"`stringify`" : function (PVx) { return JSON.stringify(PVx); }\n' +
-'};\n' +
-
-'var ACregExp = RegExp;\n' +
-'RegExp = function (PV1, PV2) { return ACRegExp(PV1, PV2); };\n' +
-
-'var ACobject = Object;\n' +
-'Object = { "`keys`" : function (PVobj) {\n' +
-'   return ACobject.keys(PVobj).filter( \n' +
-'       function (PVx) { return (! ACisNaN(PVx)) || (typeof PVx == "string" &&\n' +
-'           PVx.length > 0 && PVx[0] == "`" && PVx[PVx.length - 1] == "`"); }).map(\n' +
-'       function (PVx) { return ACisNaN(PVx) ? PVx.slice(1,PVx.length - 1) : PVx; });\n' +
-'}};\n' +
-
-'var ACpath = path;\n' +
-'path = { "`resolve`" : function (PVx) {\n' +
-'   return "git@github.com:' + LVuser + '/' + LVrepo + '/" + PVx; }\n' +
-'};\n' +
-
-'var ACmodule = module;\n' +
-'module = {"`id`" : ACmodule.id};\n');
+'var ACfsRoot = "' + LVfsRoot + '";\n' +
+'var ACdomain = "' + LVdomain + '";\n' +
+'// var ACnet = "' + LVnet + '";\n' +
+'// var ACuser = "' + LVuser + '";\n' +
+'// var ACrepo = "' + LVrepo + '";\n' +
+'var ACnetworkCode = ' + JSON.stringify(GVnetworkCode) + ';\n' +
+'// var ACnetDomain = ' + JSON.stringify(GVnetDomain) + ';\n');
         var LVfooter = (
-            'if (module["`exports`"]) {\n' +
-            '    ACmodule.exports = module["`exports`"];\n' +
-            '}\n'
-        );
-        return PVk(null, LVheader + LVdraft);
-    });
-};
-
-var DCfileUrlError = -10;
-var DCfileUrlErrorMsg = "Cannot read file URL";
-var DCfileUrlSegmentError = -20;
-var DCfileUrlSegmentErrorMsg = "Invalid pathname segment";
-// Given a github file URL, return the main path to the local
-// (it may or may not exist)
-var FFfileUrlToPath = function FFfileUrlToPath(PVurl) {
-    var LVlastColon = PVurl.lastIndexOf(':');
-    if (LVlastColon <= 0) {
-        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
-            MMurl : PVurl
-        };
-    }
-    var LVpathSegments = PVurl.slice(LVlastColon + 1).split('/');
-    if (LVpathSegments.length == 0) {
-        return { MMrc : DCfileUrlError, MMmsg : DCfileUrlErrorMsg,
-            MMurl : PVurl
-        };
-    }
-    var LVi;
-    for (LVi = 0; LVi < LVpathSegments.length; LVi += 1) {
-        var LVsegment = LVpathSegments[LVi];
-        var LVregExpOK = RegExp("^[-.a-zA-Z0-9_]{2,50}$").test(LVsegment);
-        var LVdotDotFree = LVsegment.indexOf('..') == -1;
-        if (! (LVregExpOK && LVdotDotFree)) {
-            return { MMrc : DCfileUrlSegmentError,
-                MMmsg : DCfileUrlSegmentErrorMsg, MMsegment : LVsegment
-            };
+'if (module["`exports`"]) {\n' +
+'    ACmodule.exports = module["`exports`"];\n' +
+'}\n');
+        if (GVheaderCache) {
+            return PVk(null, LVpreHeader + GVheaderCache + LVdraft + LVfooter);
         }
-    }
-    return { MMrc : 0, MMpath : PVurl.slice(LVlastColon + 1) };
+        RRfs.readFile('tmpl/header.js', function (PVe, PVd) {
+            if (PVe) {
+                console.log("cannot find required file tmpl/header.js");
+                assert(false);
+            }
+            GVheaderCache = PVd;
+            return PVk(null, LVpreHeader + GVheaderCache + LVdraft + LVfooter);
+        });
+    });
 };
 
 
@@ -782,18 +691,18 @@ var DCfileExtErrorMsg = "invalid file extension";
 // perform all batch operations for the file identified by url PVurl
 // calls PVk (error, list of files written)
 // Note that this may return before the files are actually written
-var FFfullBatch = function FFfullBatch(PVurl, PVk) {
+var FFbatch = function FFbatch(PVurl, PVk) {
     assert(PVk.length == 2);
     if (PVurl.slice(PVurl.length - 3) != '.js') {
         return PVk({MMrc : DCfileExtError, MMmsg : DCfileExtErrorMsg}, []);
     }
     var PVrootUrl = PVurl.slice(0,PVurl.length - 3);
-    var LVparse = FFfileUrlToPath(PVrootUrl);
+    var LVparse = FFparseFileUrl(PVrootUrl);
     if (LVparse.MMrc) {
         return PVk(LVparse, []);
     }
-    var LVpathname = LVparse.MMpath;
-    var LVinFilename = "ghcache/" + LVpathname + ".js";
+    var LVpathname = "cache/" + LVparse.MMnet + "/" + LVparse.MMpathname;
+    var LVinFilename = LVpathname + ".js";
     FFfullScopeTest(LVinFilename, function (PVerror, PVscope) {
         if (PVerror) {
             var LVerrorPath = 'acbuild/error/' + LVpathname;
@@ -822,25 +731,52 @@ var FFfullBatch = function FFfullBatch(PVurl, PVk) {
 };
 
 var FFfullMain = function FFfullMain(PVurl) {
-    FFfullBatch(PVurl, function (PVerror, PVfiles) {
-        if (PVerror) {
-            console.log(PVerror);
+    if (PVurl.indexOf('@') != -1) {
+        return FFbatch(PVurl, function (PVe, PVfiles) { if (PVe) {
+            console.log(PVe); } console.log("wrote fies: " + PVfiles); } );
+    }
+    RRfs.exists(PVurl, function (PVexists) {
+        if (PVexists) {
+            RRfs.readFile(PVurl, function (PVe, PVd) {
+                if (PVe) { console.log(PVe); return; }
+                var LVpath = 'cache/gh/__local__/__local__/' + PVurl;
+                FFbridgeFile(LVpath, PVd, function (PVe2) {
+                    if (PVe2) { console.log(PVe2); return; }
+                    console.log('copy ' + PVurl + ' to ' + LVpath);
+                    var LVnewUrl = 'git@github.com:__local__/__local__/' + PVurl;
+                    console.log(process.argv[0] + ' ' + process.argv[1] + ' ' +
+                        LVnewUrl);
+                    return FFbatch(LVnewUrl,
+                        function (PVe3, PVfiles) {
+                            if (PVe3) { console.log(PVe3); }
+                            console.log("wrote files: " + PVfiles);
+                        }
+                    );
+                });
+            });
+        } else {
+            return FFbatch(PVurl, function (PVerror, PVfiles) {
+                if (PVerror) { console.log(PVerror); }
+                console.log("wrote files: " + PVfiles);
+            });
         }
-        console.log("wrote files: " + PVfiles);
     });
 };
 
 // Usage: node tree.js git@github.com:user/repo/path/to/file.js
+// Usage: node tree.js file
 
 if (require.main.id === module.id && process.argv.length >= 3) {
     FFfullMain(process.argv[2]);
 }
 
 module.exports = {
-    FFassertWordDigest : FFassertWordDigest,
-    FFtree: FFtree,
+    MMassertWordDigest : FFassertWordDigest,
+    MMtree: FFtree,
     MMscopeParse: FFscopeParse,
     MMbridgeFile: FFbridgeFile,
-    MMfullBatch : FFfullBatch,
-    MMmakeDirs : FFmakeDirs
+    MMbatch : FFbatch,
+    MMmakeDirs : FFmakeDirs,
+    MMparseGitUrl : FFparseGitUrl,
+    MMnetDomain : GVnetDomain 
 };

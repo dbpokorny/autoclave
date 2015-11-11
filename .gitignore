@@ -1,4 +1,4 @@
 acbuild/*
-ghcache/*
+cache/*
 node_modules/*
 req.js
