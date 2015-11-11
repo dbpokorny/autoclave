@@ -85,10 +85,10 @@ var GVuserRepos = {};
 var GVrepoList = [];
 
 // list of github users who have at least one repo in the cache
-var GVghUsers = RRfs.readdirSync('ghcache/');
+var GVghUsers = RRfs.readdirSync('cache/gh/');
 
 GVghUsers.forEach(function (PVuser) {
-    GVuserRepos[PVuser] = RRfs.readdirSync('ghcache/' + PVuser + '/');
+    GVuserRepos[PVuser] = RRfs.readdirSync('cache/gh/' + PVuser + '/');
     GVuserRepos[PVuser].forEach(function (PVrepo) {
         GVrepoList.push(PVuser + '/' + PVrepo);
     });
@@ -139,6 +139,18 @@ var FFmakeMainPage = function FFmakeMainPage() {
 };
 
 FFmakeMainPage();
+
+var FFmakePrompt = function FFmakePrompt() {
+    RRfs.readFile('html/prompt.html', function (PVe, PVd) {
+        if (PVe) {
+            console.log(PVe);
+            return;
+        }
+        GVget['/prompt'] = ["static", "text/html", PVd];
+    });
+};
+
+FFmakePrompt();
 
 var GVerror = [];
 
