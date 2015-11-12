@@ -159,12 +159,12 @@ var ACparseFileUrl = function ACparseFileUrl(PVurl) {
 
 AGutil = {"`format`" : function (PVx) { return ACsaved.MMutilFormat(PVx); } };
 
-AGescape = function (PVx) { ACsaved.MMescape(PVx); };
-AGunescape = function (PVx) { ACsaved.MMunescape(PVx); };
-AGdecodeURI = function (PVx) { ACsaved.MMdecodeURI(PVx); };
-AGdecodeURIComponent = function (PVx) { ACsaved.MMdecodeURIComponent(PVx); };
-AGencodeURI = function (PVx) { ACsaved.MMencodeURI(PVx); };
-AGencodeURIComponent = function (PVx) { ACsaved.MMencodeURIComponent(PVx); };
+AGescape = function (PVx) { return ACsaved.MMescape(PVx); };
+AGunescape = function (PVx) { return ACsaved.MMunescape(PVx); };
+AGdecodeURI = function (PVx) { return ACsaved.MMdecodeURI(PVx); };
+AGdecodeURIComponent = function (PVx) { return ACsaved.MMdecodeURIComponent(PVx); };
+AGencodeURI = function (PVx) { return ACsaved.MMencodeURI(PVx); };
+AGencodeURIComponent = function (PVx) { return ACsaved.MMencodeURIComponent(PVx); };
 AGRegExp = function (PV1, PV2) {
     if (PV2 == undefined) {
         return ACsaved.MMRegExp(PV1);

@@ -542,6 +542,8 @@ var FFtestStringScan = function FFtestStringScan() {
     assert(FFmakeTokens('"foo').MMrc == DCstringError);
     assert(FFmakeTokens('"foo\n').MMrc == DCstringError);
     assert(FFmakeTokens('e.__defineGetter__').MMrc == DCinvalidIdError);
+    console.log(RRutil.format(FFmakeTokens('"abcd"').MMtokens[0]));
+    assert(FFmakeTokens('"abcd"').MMtokens[0].MMstrVal == 'abcd');
     assert(FFmakeTokens('"\\uabcd"').MMrc == 0);
     assert(FFmakeTokens('"\\uabcd"').MMtokens instanceof Array);
     assert(FFmakeTokens('"\\uabcd"').MMtokens.length > 0);
