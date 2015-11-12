@@ -4,7 +4,9 @@
 // 1 token data: token type, line number, column number, length in chars, raw
 //   string data, offset within input
 //
-// T1 a token may not start with "AC", which is reserved for the autoclave runtime
+// T1 a token may not start with
+//    T1.1 AC - reserved namespace for runtime
+//    T1.2 AG - reserved for global variable remap
 
 "use strict";
 
@@ -82,8 +84,7 @@ var GVinvalidIdsArray = [ 'case', 'class', 'catch', 'const', 'debugger', 'defaul
     'assign', 'create', 'defineProperties', 'defineProperty', 'freeze',
     'getNotifier', 'getOwnPropertyDescriptor', 'getOwnPropertySymbols',
     'getPrototypeOf', '__defineGetter__', '__defineSetter__', '__lookupGetter__',
-    '__lookupSetter__', 'constructor', 'ACgetItem', 'ACsetItem', 'ACruntime',
-    'ACmodule','ACobject'];
+    '__lookupSetter__', 'constructor'];
 var GVinvalidIds = {};
 GVinvalidIdsArray.forEach(function(PVk) { GVinvalidIds[PVk] = 1; });
 var GVstrEscapes = {};
@@ -106,7 +107,7 @@ var DCnumberError = -20;
 var DCscanError = -30;
 var DCstringError = -40;
 var DCinvalidIdError = -50;
-
+var GVinvalidPrefix = {"AC" : 1, "AG" : 1};
 // returns { MMrc : result code, MMtokens : list of tokens }
 var FFmakeTokens = function FFmakeTokens(PVinput) {
     var LVi = 0;
@@ -398,7 +399,8 @@ var FFmakeTokens = function FFmakeTokens(PVinput) {
             LVj = LVlongestId;
             var LVidCand = PVinput.slice(LVi, LVi + LVj);
             // Enforce T1
-            if (GVinvalidIds[LVidCand] == 1 || LVidCand.slice(0,2) == "AC") {
+            if (GVinvalidIds[LVidCand] == 1 ||
+                    GVinvalidPrefix.hasOwnProperty(LVidCand.slice(0,2))) {
                 return {
                     MMrc : DCinvalidIdError, MMerror : "Invalid identifier: "
                     + LVidCand, MMlineno : LVlineno, MMcolno : LVcolno
@@ -533,12 +535,18 @@ var FFtestToken = function FFtestToken() {
     FFtestScan('"\\""');
 };
 
+var RRutil = require('util');
+
 var FFtestStringScan = function FFtestStringScan() {
     assert(FFmakeTokens('"').MMrc == DCstringError);
     assert(FFmakeTokens('"foo').MMrc == DCstringError);
     assert(FFmakeTokens('"foo\n').MMrc == DCstringError);
     assert(FFmakeTokens('e.__defineGetter__').MMrc == DCinvalidIdError);
     assert(FFmakeTokens('"\\uabcd"').MMrc == 0);
+    assert(FFmakeTokens('"\\uabcd"').MMtokens instanceof Array);
+    assert(FFmakeTokens('"\\uabcd"').MMtokens.length > 0);
+    console.log(RRutil.format(FFmakeTokens('"\\uabcd"').MMtokens[0]));
+    console.log(RRutil.format(FFmakeTokens('"\\uabcd"').MMtokens[0].MMstrVal));
     assert(FFmakeTokens('"\\uabcd"').MMtokens[0].MMstrVal == '\uabcd');
     assert(FFmakeTokens('"\\xef"').MMrc == 0);
     assert(FFmakeTokens('"\\xef"').MMtokens[0].MMstrVal == '\xef');

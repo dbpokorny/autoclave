@@ -78,16 +78,10 @@ var FFformatHtml = function FFformatHtml(PVtree) {
 // S4 Any compound statement (CS) introduces a new scope which is identified by an
 //    offset and length corresponding to the extent of "{ ... }" in the source
 //    code
-// S5 The only legal use of the tokens "Array", is in the right hand side
-//    argument to the operator "instanceof"
 // S6 Replace require(pathname) with require(URL) which takes a URL argument
-// S7 The only legal use of the token "console" is before tokens "." and "log"
 var FFformatTokenRef = RRtable.MMformatTokenRef;
 
 var DCidError = -10;
-
-var DCs5Ids = {"#Array" : 1};
-var DCs7Ids = {"#console" : [".", "log"]};
 
 var FFscopeParse = function FFscopeParse(PVinput) {
     var LVtokSym = RRtoken.MMtokSym(PVinput);
@@ -97,33 +91,6 @@ var FFscopeParse = function FFscopeParse(PVinput) {
     var LVsymbols = LVtokSym.MMsymbols;
     var LVtokens = LVtokSym.MMtokens;
 
-    // Enforce S5
-    var LVi;
-    for (LVi = 0; LVi < LVtokens.length; LVi += 1) {
-        var LVtoken = LVtokens[LVi];
-        if (DCs5Ids.hasOwnProperty('#' + LVtoken.MMchars)) {
-            if (! (LVi > 0 && LVtokens[LVi - 1].MMchars == "instanceof")) {
-                return { MMrc : DCidError, MMmsg :
-                    "[S5] Illegal use of identifier: " + LVtoken.MMchars,
-                        MMlineno : LVtoken.MMlineno,
-                        MMcolno : LVtoken.MMcolno
-                };
-            }
-        }
-        if (DCs7Ids.hasOwnProperty('#' + LVtoken.MMchars)) {
-            var LVfollow = DCs7Ids['#' + LVtoken.MMchars];
-            var LVj;
-            for (LVj = 0; LVj < LVfollow.length; LVj += 1) {
-                if (LVtokens[LVi + 1 + LVj].MMchars != LVfollow[LVj]) {
-                    return { MMrc : DCidError, MMmsg :
-                        "[S7] Illegal use of identifier: " + LVtoken.MMchars,
-                            MMlineno : LVtoken.MMlineno,
-                            MMcolno : LVtoken.MMcolno
-                    };
-                }
-            }
-        }
-    }
     // console.log(LVsymbols);
     // console.log(LVtokens);
     var LVsyntax = RRtable.MMtestParse(LVsymbols, LVtokens);
@@ -158,25 +125,10 @@ var FFwalkTree = function FFwalkTree(PVtree) {
     var LVstack = [LVscopeTree];
     var LVparams = null;
     var LVscopeStack = [['undefined']];
-    var LVdefStack = [{
-        '#console':'global',
-        '#decodeURI':'global',
-        '#decodeURIComponent':'global',
-        '#encodeURI':'global',
-        '#encodeURIComponent':'global',
-        '#escape':'global',
-        '#fs':'global',
-        '#module':'global',
-        '#process':'global',
-        '#require':'global',
-        '#undefined':'global',
-        '#unescape':'global',
-        '#Array':'global',
-        '#JSON':'global',
-        '#Math':'global',
-        '#Object':'global',
-        '#RegExp':'global'
-    }];
+    var LVdefStack = [{}];
+    RRtable.MMglobalNameStrings.forEach(function (PVx) {
+        LVdefStack[0]['#AG' + PVx] = 'global';
+    });
     var LVtokenRefLinks = {};
     // compile a list of undefined variables
     var LVundef = [];
@@ -675,12 +627,12 @@ var FFtreeDraft = function FFtreeDraft(PVurl, PVfilename, PVk) {
         }
         var LVdraft = FFformatDraft(LVbundle.MMdata5);
         var LVpreHeader = (
-'var ACreqRoot = "' + RRpath.resolve('acbuild/js') + '";\n' +
+'var ACreqRoot = "' + RRpath.resolve('acbuild/js/cache') + '";\n' +
 'var ACfsRoot = "' + LVfsRoot + '";\n' +
 'var ACdomain = "' + LVdomain + '";\n' +
 '// var ACnet = "' + LVnet + '";\n' +
-'// var ACuser = "' + LVuser + '";\n' +
-'// var ACrepo = "' + LVrepo + '";\n' +
+'var ACuser = "' + LVuser + '";\n' +
+'var ACrepo = "' + LVrepo + '";\n' +
 'var ACnetworkCode = ' + JSON.stringify(GVnetworkCode) + ';\n' +
 '// var ACnetDomain = ' + JSON.stringify(GVnetDomain) + ';\n');
         var LVfooter = (
@@ -767,7 +719,9 @@ var FFfullMain = function FFfullMain(PVurl) {
                     return FFbatch(LVnewUrl,
                         function (PVe3, PVfiles) {
                             if (PVe3) { console.log(PVe3); }
-                            console.log("wrote files: " + PVfiles);
+                            PVfiles.forEach(function (PVf) {
+                                console.log("wrote file: " + PVf);
+                            });
                         }
                     );
                 });
@@ -775,7 +729,9 @@ var FFfullMain = function FFfullMain(PVurl) {
         } else {
             return FFbatch(PVurl, function (PVerror, PVfiles) {
                 if (PVerror) { console.log(PVerror); }
-                console.log("wrote files: " + PVfiles);
+                PVfiles.forEach(function (PVf) {
+                    console.log("wrote file: " + PVf);
+                });
             });
         }
     });

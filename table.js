@@ -45,29 +45,64 @@ var AF   = 'AF';   // anonymous function
 var NF   = 'NF';   // named function
 var PL   = 'PL';   // parameter list
 
-var FFformatTokenRef;
-var FFdeepLength;
-var FFzapDivTags;
-var FFhtmlEntities;
-var FFforHTML;
+var GVglobalNameStrings = ['console', 'decodeURI', 'decodeURIComponent',
+    'encodeURI', 'encodeURIComponent', 'escape', 'fs', 'module', 'process',
+    'require', 'undefined', 'unescape', 'Array', 'JSON', 'Math', 'Object',
+    'RegExp'];
 
-// Fit small syntax trees onto a single line
-var DCsingleLineLimit = 300;
-var FFsquish = function FFsquish(PVx) {
-    if (FFdeepLength(PVx) < DCsingleLineLimit) { FFzapDivTags(PVx); }
-    return PVx;
+var GVglobalNames = {};
+GVglobalNameStrings.forEach(function (PVx) { GVglobalNames['#' + PVx] = 1; });
+
+var GVsurrogateNames = {};
+GVglobalNameStrings.forEach(function (PVx) { GVsurrogateNames['AG' + PVx] = 1; });
+
+var DCinvalidVarnameError = -10;
+var DCinvalidVarnameErrorMsg = "invalid variable name";
+// Validate a request to define a variable name
+var FFvalidVarname = function FFvalidVarname(PVname) {
+    assert(typeof PVname == "string");
+    if (GVglobalNames.hasOwnProperty('#' + PVname)) {
+        return { MMrc : DCinvalidVarnameError, MMmsg :
+            DCinvalidVarnameErrorMsg, MMdata : PVname };
+    } else {
+        return { MMrc : 0 };
+    }
 };
 
-var FFformatParam = function FFformatParam (PVt) {
+var FFremapGlobalName = function FFremapGlobalName(PVname) {
+    assert(typeof PVname == "string");
+    if (GVglobalNames.hasOwnProperty('#' + PVname)) {
+        return "AG" + PVname;
+    } else {
+        return PVname;
+    }
+};
+
+var FFunmapGlobalName = function FFunmapGlobalName(PVname) {
+    assert(typeof PVname == "string");
+    if (PVname.slice(0,2) == "AG") {
+        return PVname.slice(2);
+    } else {
+        return PVname;
+    }
+};
+
+// Format a reference to a token (see scope / LVdata3)
+var FFformatTokenRef = function FFformatTokenRef(PVtoken) {
+    return (FFremapGlobalName(PVtoken.MMchars) + '@' + (PVtoken.MMlineno + 1) +
+            ',' + (PVtoken.MMcolno + 1) + '/' + PVtoken.MMoffset);
+};
+
+var FFformatHtmlParam = function FFformatHtmlParam (PVt) {
     return ['<a id="' + PVt.MMchars + '-' + PVt.MMoffset + '">','<span class="hiParam">', PVt.MMchars,
            '</span>','</a>'];
 };
 
-var FFformatDef = function FFformatDef(PVt) {
+var FFformatHtmlDef = function FFformatHtmlDef(PVt) {
     return ['<a id="' + PVt.MMchars + '-' + PVt.MMoffset + '">', PVt.MMchars, '</a>'];
 };
 
-var FFformatVar = function FFformatVar(PVt) {
+var FFformatHtmlVar = function FFformatHtmlVar(PVt) {
     if (PVt.MMlink == undefined) {
         return ['<span class="hiUndefVar">', PVt.MMchars, '</span>'];
     }
@@ -84,6 +119,87 @@ var FFformatVar = function FFformatVar(PVt) {
 var FFaddBackticks = function FFaddBackticks(PVx) {
     assert(PVx.length > 0);
     return (PVx[0] + '`' + PVx.slice(1,PVx.length - 1) + '`' + PVx[PVx.length - 1]);
+};
+
+// Compute the sum of the lengths of all (non-tag) strings
+var FFdeepLength = function FFdeepLength(PVx) {
+    var LVresult = 0;
+    var FFdlHelper = function dlHelper(PVe) {
+        if (PVe instanceof Array) {
+            var LVi;
+            for (LVi = 0; LVi < PVe.length; LVi += 1) {
+                FFdlHelper(PVe[LVi]);
+            }
+        } else if (typeof PVe == "string" && PVe.length > 0 && PVe[0] != '<' ) {
+            LVresult += PVe.length;
+        }
+    };
+    FFdlHelper(PVx);
+    return LVresult;
+};
+
+// set all <div> and </div> entries to the empty string
+// also removes indents
+var FFzapDivTags = function FFzapDivTags(PVx) {
+    var FFzdtHelper = function dlHelper(PVe) {
+        if (PVe instanceof Array) {
+            var LVi;
+            for (LVi = 0; LVi < PVe.length; LVi += 1) {
+                if (PVe[LVi].slice(0,5) == '<div>' || PVe[LVi] == '</div>' || PVe[LVi] == '***INDENT***') {
+                    PVe[LVi] = '';
+                } else {
+                    FFzdtHelper(PVe[LVi]);
+                }
+            }
+        }
+    };
+    FFzdtHelper(PVx);
+};
+
+// Fit small syntax trees onto a single line
+var DCsingleLineLimit = 300;
+var FFsquish = function FFsquish(PVx) {
+    if (FFdeepLength(PVx) < DCsingleLineLimit) { FFzapDivTags(PVx); }
+    return PVx;
+};
+
+// Convert string characters to HTML entities
+var FFhtmlEntities = function FFhtmlEntities(PVx) {
+    var LVi;
+    var LVresult = [];
+    for (LVi = 0; LVi < PVx.length; LVi += 1) {
+        var LVc = PVx[LVi];
+        if (LVc == '&') {
+            LVresult.push('&amp;');
+        } else if (LVc == '<') {
+            LVresult.push('&lt;');
+        } else if (LVc == '>') {
+            LVresult.push('&gt;');
+        } else {
+            LVresult.push(LVc);
+        }
+    }
+    return LVresult.join("");
+};
+
+// Build the "for" statement HTML syntax tree
+var FFformatHtmlFor = function FFformatHtmlFor(PVa,PVb,PVc,PVbody) {
+    var LVresult = ['<div>','***INDENT***','<span class="hiRepeat">','for','</span>','('];
+    if (PVa.length > 0) {
+        LVresult.push(PVa);
+    }
+    LVresult.push(';');
+    if (PVb.length > 0) {
+        LVresult.push(PVb);
+    }
+    LVresult.push(';');
+    if (PVc.length > 0) {
+        LVresult.push(PVc);
+    }
+    LVresult.push(')');
+    LVresult.push(PVbody);
+    LVresult.push('</div>');
+    return LVresult;
 };
 
 // the first rule of GVrulesAndReducers must be [PR,'->',[*]] for some [*]
@@ -165,49 +281,49 @@ var GVrulesAndReducers = [
         function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return PVcs; },
         function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return PVcs; },
         function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return ['for ( ; ; )',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return FFforHTML([],[],[],PVcs); },
+        function (PVfor,PV_o,PV_,PV__,PV_c,PVcs) { return FFformatHtmlFor([],[],[],PVcs); },
     [S,'->',['for','(',';',';',X,')',CS]],
         function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return ['for(;;',PVx,')',PVcs]; },
         function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return ['for ( ; ;',PVx,')',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return FFforHTML([],[],PVx,PVcs); },
+        function (PVfor,PV_o,PV_,PV__,PVx,PV_c,PVcs) { return FFformatHtmlFor([],[],PVx,PVcs); },
     [S,'->',['for','(',';',X,';',')',CS]],
         function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return ['for(;',PVx,';)',PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return ['for ( ;',PVx,'; )', PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return FFforHTML([],PVx,[],PVcs); },
+        function (PVfor,PV_o,PV_,PVx,PV__,PV_c,PVcs) { return FFformatHtmlFor([],PVx,[],PVcs); },
     [S,'->',['for','(',';',X,';',X,')',CS]],
         function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return ['for(;',PVx,';',PVx2,')',PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return ['for ( ;',PVx,';',PVx2,')',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return FFforHTML([],PVx,PVx2,PVcs); },
+        function (PVfor,PV_o,PV_,PVx,PV__,PVx2,PV_c,PVcs) { return FFformatHtmlFor([],PVx,PVx2,PVcs); },
     [S,'->',['for','(',X,';',';',')',CS]],
         function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return ['for(',PVx,';;)',PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return [PVx,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return ['for (',PVx,'; ; )',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return FFforHTML(PVx,[],[],PVcs); },
+        function (PVfor,PV_o,PVx,PV_,PV__,PV_c,PVcs) { return FFformatHtmlFor(PVx,[],[],PVcs); },
     [S,'->',['for','(',X,';',';',X,')',CS]],
         function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return ['for(',PVx,';;',PVx2,')',PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return ['for (',PVx,'; ;',PVx2,')',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return FFforHTML(PVx,[],PVx2,PVcs); },
+        function (PVfor,PV_o,PVx,PV_,PV__,PVx2,PV_c,PVcs) { return FFformatHtmlFor(PVx,[],PVx2,PVcs); },
     [S,'->',['for','(',X,';',X,';',')',CS]],
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return ['for(',PVx,';',PVx2,';)',PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return [PVx,PVx2,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return ['for (',PVx,';',PVx2,';)',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return FFforHTML(PVx,PVx2,[],PVcs); },
+        function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PV_c,PVcs) { return FFformatHtmlFor(PVx,PVx2,[],PVcs); },
     [S,'->',['for','(',X,';',X,';',X,')',CS]],
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return ['for(',PVx,';',PVx2,';',PVx3,')',PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return [PVx,PVx2,PVx3,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return [PVx,PVx2,PVx3,PVcs]; },
         function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return ['for (',PVx,';',PVx2,';',PVx3,')',PVcs,'\n','***INDENT***']; },
-        function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return FFforHTML(PVx,PVx2,PVx3,PVcs); },
+        function (PVfor,PV_o,PVx,PV_,PVx2,PV__,PVx3,PV_c,PVcs) { return FFformatHtmlFor(PVx,PVx2,PVx3,PVcs); },
     [S,'->',['break',';']],
         function (PV_,PV__) { return 'break'; },
         function (PV_,PV__) { return ''; },
@@ -236,14 +352,18 @@ var GVrulesAndReducers = [
         function (PV_,PVn,PV__) { return ['var',PVn]; },
         function (PV_,PVn,PV__) { return ['(','def', FFformatTokenRef(PVn),')','\n','***INDENT***']; },
         function (PV_,PVn,PV__) { return ''; },
-        function (PV_,PVn,PV__) { return ['var',PVn.MMchars,';','\n','***INDENT***']; },
-        function (PV_,PVn,PV__) { return ['<div>','***INDENT***','<span class="hiIdentifier">','var','</span>',FFformatDef(PVn),';','</div>']; },
+        function (PV_,PVn,PV__) {
+            var LVcheck = FFvalidVarname(PVn.MMchars);
+            return LVcheck.MMrc ? LVcheck : ['var',PVn.MMchars,';','\n','***INDENT***']; },
+        function (PV_,PVn,PV__) { return ['<div>','***INDENT***','<span class="hiIdentifier">','var','</span>',FFformatHtmlDef(PVn),';','</div>']; },
     [S,'->',['var','NAME','=',X,';']],
         function (PV_,PVn,PV__,PVx,PV___) { return ['var',PVn,'=',PVx]; },
         function (PV_,PVn,PV__,PVx,PV___) { return ['(','def', FFformatTokenRef(PVn),PVx,')','\n','***INDENT***']; },
         function (PV_,PVn,PV__,PVx,PV___) { return PVx; },
-        function (PV_,PVn,PV__,PVx,PV___) { return ['var',PVn.MMchars,'=',PVx,';','\n','***INDENT***']; },
-        function (PV_,PVn,PV__,PVx,PV___) { return ['<div>','***INDENT***','<span class="hiIdentifier">','var','</span>',FFformatDef(PVn),'=',PVx,';','</div>']; },
+        function (PV_,PVn,PV__,PVx,PV___) {
+            var LVcheck = FFvalidVarname(PVn.MMchars);
+            return LVcheck.MMrc ? LVcheck : ['var',PVn.MMchars,'=',PVx,';','\n','***INDENT***']; },
+        function (PV_,PVn,PV__,PVx,PV___) { return ['<div>','***INDENT***','<span class="hiIdentifier">','var','</span>',FFformatHtmlDef(PVn),'=',PVx,';','</div>']; },
     [S,'->',['throw',X,';']],
         function (PV_,PVx,PV__) { return ['throw',PVx]; },
         function (PV_,PVx,PV__) { return PVx; },
@@ -272,9 +392,14 @@ var GVrulesAndReducers = [
         function (PVcx,PVao,PVx) { return [PVcx,PVao,PVx]; },
         function (PVcx,PVao,PVx) { return [PVcx,PVx]; },
         function (PVcx,PVao,PVx) { return [PVcx,PVx]; },
-        function (PVcx,PVao,PVx) { return (
-                (PVao == "=" && PVcx instanceof Array && PVcx[0] == "ACgetItem") ?
-            ['ACsetItem','(',PVcx[2],',',PVcx[4],',',PVx,')'] : [PVcx,PVao,PVx]);},
+        function (PVcx,PVao,PVx) {
+            var LVsetItemCheck = (PVao == "=" &&
+                PVcx instanceof Array && PVcx[0] == "ACgetItem");
+            if (LVsetItemCheck) {
+                return ['ACsetItem','(',PVcx[2],',',PVcx[4],',',PVx,')'];
+            }
+            return [PVcx,PVao,PVx];
+        },
         function (PVcx,PVao,PVx) { return [PVcx,PVao,PVx];},
     [AO,'->',['=']],
         function (PVx) { return "eq"; },
@@ -463,41 +588,46 @@ var GVrulesAndReducers = [
         function (PVx) { return PVx; },
         function (PVx) { return PVx; },
     [RX,'->',[RX,RO,SHX]],
-        function (PVx,PVy,PVz) { return [PVx,PVy,PVz]; },
-        function (PVx,PVy,PVz) { return [PVx,PVz]; },
-        function (PVx,PVy,PVz) { return [PVx,PVz]; },
-        function (PVx,PVy,PVz) { return [PVx,PVy,PVz]; },
-        function (PVx,PVy,PVz) { return [PVx,PVy,PVz]; },
+        function (PVrx,PVro,PVz) { return [PVrx,PVro,PVz]; },
+        function (PVrx,PVro,PVz) { return [PVrx,PVz]; },
+        function (PVrx,PVro,PVz) { return [PVrx,PVz]; },
+        function (PVrx,PVro,PVz) {
+            var LVunmapCheck = (PVro == "instanceof" && GVsurrogateNames.hasOwnProperty(PVz));
+            if (LVunmapCheck) {
+                return [PVrx,PVro,FFunmapGlobalName(PVz)];
+            }
+            return [PVrx,PVro,PVz]; },
+        function (PVrx,PVro,PVz) { return [PVrx,PVro,PVz]; },
     [RO,'->',['<']],
-        function (PVx) { return "lt"; },
-        function (PVx) { return ""; },
-        function (PVx) { return ""; },
-        function (PVx) { return "<"; },
-        function (PVx) { return "&lt;"; },
+        function (PVro) { return "lt"; },
+        function (PVro) { return ""; },
+        function (PVro) { return ""; },
+        function (PVro) { return "<"; },
+        function (PVro) { return "&lt;"; },
     [RO,'->',['>']],
-        function (PVx) { return "gt"; },
-        function (PVx) { return ""; },
-        function (PVx) { return ""; },
-        function (PVx) { return ">"; },
-        function (PVx) { return "&gt;"; },
+        function (PVro) { return "gt"; },
+        function (PVro) { return ""; },
+        function (PVro) { return ""; },
+        function (PVro) { return ">"; },
+        function (PVro) { return "&gt;"; },
     [RO,'->',['<=']],
-        function (PVx) { return "le"; },
-        function (PVx) { return ""; },
-        function (PVx) { return ""; },
-        function (PVx) { return "<="; },
-        function (PVx) { return "&lt;="; },
+        function (PVro) { return "le"; },
+        function (PVro) { return ""; },
+        function (PVro) { return ""; },
+        function (PVro) { return "<="; },
+        function (PVro) { return "&lt;="; },
     [RO,'->',['>=']],
-        function (PVx) { return "ge"; },
-        function (PVx) { return ""; },
-        function (PVx) { return ""; },
-        function (PVx) { return ">="; },
-        function (PVx) { return "&gt;="; },
+        function (PVro) { return "ge"; },
+        function (PVro) { return ""; },
+        function (PVro) { return ""; },
+        function (PVro) { return ">="; },
+        function (PVro) { return "&gt;="; },
     [RO,'->',['instanceof']],
-        function (PVx) { return "instanceof"; },
-        function (PVx) { return ""; },
-        function (PVx) { return ""; },
-        function (PVx) { return "instanceof"; },
-        function (PVx) { return "instanceof"; },
+        function (PVro) { return "instanceof"; },
+        function (PVro) { return ""; },
+        function (PVro) { return ""; },
+        function (PVro) { return "instanceof"; },
+        function (PVro) { return "instanceof"; },
     [SHX,'->',[AX]],
         function (PVx) { return PVx; },
         function (PVx) { return PVx; },
@@ -505,29 +635,29 @@ var GVrulesAndReducers = [
         function (PVx) { return PVx; },
         function (PVx) { return PVx; },
     [SHX,'->',[AX,SHO,SHX]],
-        function (PVx,PVy,PVz) { return [PVx,PVy,PVz]; },
-        function (PVx,PVy,PVz) { return [PVx,PVz]; },
-        function (PVx,PVy,PVz) { return [PVx,PVz]; },
-        function (PVx,PVy,PVz) { return [PVx,PVy,PVz]; },
-        function (PVx,PVy,PVz) { return [PVx,PVy,PVz]; },
+        function (PVx,PVsho,PVz) { return [PVx,PVsho,PVz]; },
+        function (PVx,PVsho,PVz) { return [PVx,PVz]; },
+        function (PVx,PVsho,PVz) { return [PVx,PVz]; },
+        function (PVx,PVsho,PVz) { return [PVx,PVsho,PVz]; },
+        function (PVx,PVsho,PVz) { return [PVx,PVsho,PVz]; },
     [SHO,'->',['<<']],
-        function (PVx) { return "lshift"; },
-        function (PVx) { return ""; },
-        function (PVx) { return ""; },
-        function (PVx) { return "<<"; },
-        function (PVx) { return "&lt;&lt;"; },
+        function (PVsho) { return "lshift"; },
+        function (PVsho) { return ""; },
+        function (PVsho) { return ""; },
+        function (PVsho) { return "<<"; },
+        function (PVsho) { return "&lt;&lt;"; },
     [SHO,'->',['>>']],
-        function (PVx) { return "rshift"; },
-        function (PVx) { return ""; },
-        function (PVx) { return ""; },
-        function (PVx) { return ">>"; },
-        function (PVx) { return "&gt;&gt;"; },
+        function (PVsho) { return "rshift"; },
+        function (PVsho) { return ""; },
+        function (PVsho) { return ""; },
+        function (PVsho) { return ">>"; },
+        function (PVsho) { return "&gt;&gt;"; },
     [SHO,'->',['>>>']],
-        function (PVx) { return "zshift"; },
-        function (PVx) { return ""; },
-        function (PVx) { return ""; },
-        function (PVx) { return ">>>"; },
-        function (PVx) { return "&gt;&gt;&gt;"; },
+        function (PVsho) { return "zshift"; },
+        function (PVsho) { return ""; },
+        function (PVsho) { return ""; },
+        function (PVsho) { return ">>>"; },
+        function (PVsho) { return "&gt;&gt;&gt;"; },
     [AX,'->',[MULX]],
         function (PVx) { return PVx; },
         function (PVx) { return PVx; },
@@ -757,8 +887,8 @@ var GVrulesAndReducers = [
         function (PVx) { return PVx; },
         function (PVx) { return ['(','use', FFformatTokenRef(PVx),')','\n','***INDENT***']; },
         function (PVx) { return ""; },
-        function (PVx) { return PVx.MMchars; },
-        function (PVx) { return FFformatVar(PVx); },
+        function (PVx) { return FFremapGlobalName(PVx.MMchars); },
+        function (PVx) { return FFformatHtmlVar(PVx); },
     [PX,'->',['NUMBER']],
         function (PVx) { return PVx; },
         function (PVx) { return ""; },
@@ -823,106 +953,33 @@ var GVrulesAndReducers = [
         function (PVf,PVn,PV_o,PV_c,PVcs) { return ['function',PVn,'()',PVcs]; },
         function (PVf,PVn,PV_o,PV_c,PVcs) { return ['(','lambda','(',')',PVcs,')','\n','***INDENT***']; },
         function (PVf,PVn,PV_o,PV_c,PVcs) { return PVcs; },
-        function (PVf,PVn,PV_o,PV_c,PVcs) { return ['function',PVn.MMchars,'()',PVcs]; },
+        function (PVf,PVn,PV_o,PV_c,PVcs) {
+            var LVcheck = FFvalidVarname(PVn.MMchars);
+            return LVcheck.MMrc ? LVcheck : ['function',PVn.MMchars,'()',PVcs]; },
         function (PVf,PVn,PV_o,PV_c,PVcs) { return ['<span class="hiFunction">','function','</span>','<b>',PVn.MMchars,'</b>','()',PVcs]; },
     [NF,'->',['function','NAME','(',PL,')',CS]],
         function (PVf,PVn,PV_o,PVpl,PV_c,PVcs) { return ['function',PVn,'(',PVpl,')',PVcs]; },
         function (PVf,PVn,PV_o,PVpl,PV_c,PVcs) { return ['(','lambda','(',PVpl,')',PVcs,')','\n','***INDENT***']; },
         function (PVf,PVn,PV_o,PVpl,PV_c,PVcs) { return PVcs; },
-        function (PVf,PVn,PV_o,PVpl,PV_c,PVcs) { return ['function',PVn.MMchars,'(',PVpl,')',PVcs]; },
+        function (PVf,PVn,PV_o,PVpl,PV_c,PVcs) {
+            var LVcheck = FFvalidVarname(PVn.MMchars);
+            return LVcheck.MMrc ? LVcheck : ['function',PVn.MMchars,'(',PVpl,')',PVcs]; },
         function (PVf,PVn,PV_o,PVpl,PV_c,PVcs) { return ['<span class="hiFunction">','function','</span>','<b>',PVn.MMchars,'</b>','(',PVpl,')',PVcs]; },
     [PL,'->',['NAME']],
         function (PVn) { return [PVn]; },
         function (PVn) { return [FFformatTokenRef(PVn)]; },
         function (PVn) { return ""; },
-        function (PVn) { return [PVn.MMchars]; },
-        function (PVn) { return [FFformatParam(PVn)]; },
+        function (PVn) { var LVcheck = FFvalidVarname(PVn.MMchars);
+            return LVcheck.MMrc ? LVcheck : [PVn.MMchars]; },
+        function (PVn) { return [FFformatHtmlParam(PVn)]; },
     [PL,'->',['NAME',',',PL]],
         function (PVn,PV_,PVl) { return [PVn].concat(PVl); },
         function (PVn,PV_,PVl) { return [FFformatTokenRef(PVn)].concat(PVl); },
         function (PVn,PV_,PVl) { return ""; },
-        function (PVn,PV_,PVl) { return [PVn.MMchars,','].concat(PVl); },
-        function (PVn,PV_,PVl) { return [FFformatParam(PVn),','].concat(PVl); },
+        function (PVn,PV_,PVl) { var LVcheck = FFvalidVarname(PVn.MMchars);
+            return LVcheck.MMrc ? LVcheck : [PVn.MMchars,','].concat(PVl); },
+        function (PVn,PV_,PVl) { return [FFformatHtmlParam(PVn),','].concat(PVl); },
 ];
-
-// Format a reference to a token (see scope / LVdata3)
-FFformatTokenRef = function FFformatTokenRef(PVtoken) {
-    return PVtoken.MMchars + '@' + (PVtoken.MMlineno + 1) + ',' + (PVtoken.MMcolno + 1) + '/' + PVtoken.MMoffset;
-};
-
-// Compute the sum of the lengths of all (non-tag) strings
-FFdeepLength = function FFdeepLength(PVx) {
-    var LVresult = 0;
-    var FFdlHelper = function dlHelper(PVe) {
-        if (PVe instanceof Array) {
-            var LVi;
-            for (LVi = 0; LVi < PVe.length; LVi += 1) {
-                FFdlHelper(PVe[LVi]);
-            }
-        } else if (typeof PVe == "string" && PVe.length > 0 && PVe[0] != '<' ) {
-            LVresult += PVe.length;
-        }
-    };
-    FFdlHelper(PVx);
-    return LVresult;
-};
-
-// set all <div> and </div> entries to the empty string
-// also removes indents
-FFzapDivTags = function FFzapDivTags(PVx) {
-    var FFzdtHelper = function dlHelper(PVe) {
-        if (PVe instanceof Array) {
-            var LVi;
-            for (LVi = 0; LVi < PVe.length; LVi += 1) {
-                if (PVe[LVi].slice(0,5) == '<div>' || PVe[LVi] == '</div>' || PVe[LVi] == '***INDENT***') {
-                    PVe[LVi] = '';
-                } else {
-                    FFzdtHelper(PVe[LVi]);
-                }
-            }
-        }
-    };
-    FFzdtHelper(PVx);
-};
-
-// Convert string characters to HTML entities
-FFhtmlEntities = function FFhtmlEntities(PVx) {
-    var LVi;
-    var LVresult = [];
-    for (LVi = 0; LVi < PVx.length; LVi += 1) {
-        var LVc = PVx[LVi];
-        if (LVc == '&') {
-            LVresult.push('&amp;');
-        } else if (LVc == '<') {
-            LVresult.push('&lt;');
-        } else if (LVc == '>') {
-            LVresult.push('&gt;');
-        } else {
-            LVresult.push(LVc);
-        }
-    }
-    return LVresult.join("");
-};
-
-// Build the "for" statement HTML syntax tree
-FFforHTML = function FFforHTML(PVa,PVb,PVc,PVbody) {
-    var LVresult = ['<div>','***INDENT***','<span class="hiRepeat">','for','</span>','('];
-    if (PVa.length > 0) {
-        LVresult.push(PVa);
-    }
-    LVresult.push(';');
-    if (PVb.length > 0) {
-        LVresult.push(PVb);
-    }
-    LVresult.push(';');
-    if (PVc.length > 0) {
-        LVresult.push(PVc);
-    }
-    LVresult.push(')');
-    LVresult.push(PVbody);
-    LVresult.push('</div>');
-    return LVresult;
-};
 
 // 1 GVrules
 // data2 GVword
@@ -1500,7 +1557,15 @@ var FFtestParse = function FFtestParse(PVinput, PVinputData) {
             LVdata4.push(GVmembers[LVruleNum].apply(null, LVdata4Items));
             // LVdata5
             LVdata5Items.reverse();
-            LVdata5.push(GVdrafts[LVruleNum].apply(null, LVdata5Items));
+            var LVdraftResult = GVdrafts[LVruleNum].apply(null, LVdata5Items);
+            if (LVdraftResult.MMrc) {
+                return {
+                    MMrc : DCinputError,
+                    MMmsg : "Reduction rule failed",
+                    MMdata : LVdraftResult
+                };
+            }
+            LVdata5.push(LVdraftResult);
             // LVtokenTree
             LVdataItems.push("Rule" + LVruleNum);
             LVdataItems.reverse();
@@ -1558,6 +1623,7 @@ FFformatInfo = function FFformatInfo(PVstr) {
 
 // FFtestParse2 expects the tokens to have link data that associates a definition
 // with a use.
+// Builds the HTML
 var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
     var LVi = 0; // index into PVinput
     var LVstack = [0];
@@ -1646,4 +1712,6 @@ module.exports = {
     MMformatTokenRef : FFformatTokenRef,
     MMtestParse : FFtestParse,
     MMtestParse2 : FFtestParse2,
+    MMglobalNameStrings : GVglobalNameStrings,
+    MMglobalNames : GVglobalNames
 };
