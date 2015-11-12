@@ -140,17 +140,9 @@ var FFmakeMainPage = function FFmakeMainPage() {
 
 FFmakeMainPage();
 
-var FFmakePrompt = function FFmakePrompt() {
-    RRfs.readFile('html/prompt.html', function (PVe, PVd) {
-        if (PVe) {
-            console.log(PVe);
-            return;
-        }
-        GVget['/prompt'] = ["static", "text/html", PVd];
-    });
-};
-
-FFmakePrompt();
+GVget['/prompt'] = ["load", "text/html", "client/prompt.html"];
+GVget['/prompt.js'] = ["load", "application/javascript", "client/prompt.js"];
+GVget['/unbindBackspace.js'] = ["load", "application/javascript", "client/unbindBackspace.js"];
 
 var GVerror = [];
 
@@ -217,6 +209,10 @@ GVpost['/'] = function (PVbody, PVk) {
     return PVk({hello:'world', 10:20});
 };
 
+// map a url to {MMmtime : ..., MMdata : ...} where MMdata is the document data
+// and MMmtime is the "last modified time" of the file (stat)
+var GVwebCache = {};
+
 var FFserver = RRhttp.createServer(function (PVrequest, PVresponse) {
     // console.log(Object.keys(PVrequest));
     // console.log(PVrequest.domain);
@@ -258,7 +254,55 @@ var FFserver = RRhttp.createServer(function (PVrequest, PVresponse) {
                 PVresponse.writeHead(200, {"Content-Type": PVx[1]});
                 PVresponse.end(PVx[2]);
             });
+        } else if (LVservice[0] == "load") {
+            // ["load", "text/plain", "hello.txt"]
+            var LVpathname = LVservice[2]
+            RRfs.stat(LVpathname, function (PVe, PVs) {
+                if (PVe) {
+                    console.log(PVe);
+                    PVresponse.writeHead(500, {"Content-Type": "text/plain"});
+                    PVresponse.end("Error: " + PVe.toString());
+                    return;
+                }
+                var LVmtimeNow = PVs.mtime;
+                if (GVwebCache.hasOwnProperty(LVurl)) {
+                    var LVmtimeCache = GVwebCache[LVurl].MMmtime;
+                    if (LVmtimeNow > LVmtimeCache) {
+                        console.log('update cache for ' + LVurl);
+                        return RRfs.readFile(LVpathname, function (PVe, PVd) {
+                            if (PVe) {
+                                console.log(PVe);
+                                PVresponse.writeHead(500, {"Content-Type": "text/plain"});
+                                PVresponse.end("Error: " + PVe.toString());
+                                return;
+                            }
+                            GVwebCache[LVurl] = { MMmtime : LVmtimeNow, MMdata : PVd };
+                            PVresponse.writeHead(200, {"Content-Type": LVservice[1]});
+                            PVresponse.end(PVd);
+                            return;
+                        });
+                    }
+                    console.log('serve cached file for ' + LVurl);
+                    PVresponse.writeHead(200, {"Content-Type": LVservice[1]});
+                    PVresponse.end(GVwebCache[LVurl].MMdata);
+                    return;
+                }
+                console.log('read from disk, cache, and serve ' + LVurl);
+                return RRfs.readFile(LVpathname, function (PVe, PVd) {
+                    if (PVe) {
+                        console.log(PVe);
+                        PVresponse.writeHead(500, {"Content-Type": "text/plain"});
+                        PVresponse.end("Error: " + PVe.toString());
+                        return;
+                    }
+                    GVwebCache[LVurl] = { MMmtime : LVmtimeNow, MMdata : PVd };
+                    PVresponse.writeHead(200, {"Content-Type": LVservice[1]});
+                    PVresponse.end(PVd);
+                    return;
+                });
+            });
         } else if (LVservice[0] == "static") {
+            // ["static", "text/plain", "Hello, world!"]
             PVresponse.writeHead(200, {"Content-Type": LVservice[1]});
             PVresponse.end(LVservice[2]);
             return;

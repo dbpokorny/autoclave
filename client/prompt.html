@@ -2,6 +2,7 @@
     <head> 
         <script type="application/javascript" src="/jquery-2.1.4.js"></script>
         <script type="application/javascript" src="/infobox.js"></script>
+        <script type="application/javascript" src="/prompt.js"></script>
         <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
         <style>
             body {background-color:#808080; color:white; font-family: Courier;}
@@ -14,11 +15,17 @@
 var FFf = function FFf (PVx) {
     document.write(PVx);
 };
+
+$(document).ready(FFdocReady);
         </script>
     </head>
-    <body onkeydown="console.log('a');">
+    <body>
         <p>Let \(x\) be a variable</p>
         <p>Let \(y\) be a variable</p>
         <p>Let \(z\) be a variable</p>
+        <p>Let \(A\) be a variable</p>
+        <p>Let \(B\) be a variable</p>
+        <div id="IDmatrix">
+        </div>
     </body>
 </html>
