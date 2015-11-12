@@ -73,12 +73,12 @@ GVkeymap["M-key91"] = function () {;};
 GVkeymap["key8"] = FFhandleBackspace;
 GVkeymap["key13"] = FFaddRow;
 GVkeymap["key32"] = "&nbsp;";
-GVkeymap["key96"] = "`";
-GVkeymap["keyS-126"] = "~";
-GVkeymap["key45"] = "-";
-GVkeymap["key61"] = "=";
-GVkeymap["keyS-95"] = "_";
-GVkeymap["keyS-43"] = "+";
+GVkeymap["key192"] = "`";
+GVkeymap["S-key192"] = "~";
+GVkeymap["key189"] = "-";
+GVkeymap["key187"] = "=";
+GVkeymap["S-key189"] = "_";
+GVkeymap["S-key187"] = "+";
 GVkeymap["key219"] = "[";
 GVkeymap["key221"] = "]";
 GVkeymap["key220"] = "\\";
@@ -86,28 +86,28 @@ GVkeymap["S-key219"] = "{";
 GVkeymap["S-key221"] = "}";
 GVkeymap["S-key220"] = "|";
 
-GVkeymap["key59"] = ";";
-GVkeymap["key39"] = "'";
-GVkeymap["keyS-58"] = ":";
-GVkeymap["keyS-34"] = "\"";
+GVkeymap["key186"] = ";";
+GVkeymap["key222"] = "'";
+GVkeymap["S-key186"] = ":";
+GVkeymap["S-key222"] = "\"";
 
-GVkeymap["key44"] = ",";
-GVkeymap["key46"] = ".";
-GVkeymap["key47"] = "/";
-GVkeymap["keyS-60"] = "&lt;";
-GVkeymap["keyS-62"] = "&gt;";
-GVkeymap["keyS-63"] = "?";
+GVkeymap["key188"] = ",";
+GVkeymap["key190"] = ".";
+GVkeymap["key191"] = "/";
+GVkeymap["S-key188"] = "&lt;";
+GVkeymap["S-key190"] = "&gt;";
+GVkeymap["S-key191"] = "?";
 
-GVkeymap["keyS-33"] = "!";
-GVkeymap["keyS-64"] = "@";
-GVkeymap["keyS-35"] = "#";
-GVkeymap["keyS-36"] = "$";
-GVkeymap["keyS-37"] = "%";
-GVkeymap["keyS-94"] = "^";
-GVkeymap["keyS-38"] = "&amp;";
-GVkeymap["keyS-42"] = "*";
-GVkeymap["keyS-40"] = "(";
-GVkeymap["keyS-41"] = ")";
+GVkeymap["S-key48"] = ")";
+GVkeymap["S-key49"] = "!";
+GVkeymap["S-key50"] = "@";
+GVkeymap["S-key51"] = "#";
+GVkeymap["S-key52"] = "$";
+GVkeymap["S-key53"] = "%";
+GVkeymap["S-key54"] = "^";
+GVkeymap["S-key55"] = "&amp;";
+GVkeymap["S-key56"] = "*";
+GVkeymap["S-key57"] = "(";
 
 var FFaddElt = function FFaddElt(PVe) {
     var LVrows = $('#IDmatrix')[0].children;
@@ -153,14 +153,24 @@ var FFcreateBufferElt = function FFcreateBufferElt(PVc, PVctrl, PVshift) {
     return LVe;
 };
 
+// dict of key commands that should not prevent default
+var GVdefaultKeys = {};
+
+GVdefaultKeys['M-key82'] = 1; // M-r Reload
+GVdefaultKeys['A-M-key73'] = 1; // A-M-i Dev tools
+GVdefaultKeys['A-M-key74'] = 1; // A-M-j JS Console
+
 var FFhandleKeydown = function handleKeydown (PVevent) {
-    PVevent.preventDefault();
     var LVn = PVevent.keyCode;
     var LVctrl = PVevent.ctrlKey ? "C-" : "";
     var LValt = PVevent.altKey ? "A-" : "";
     var LVshift = PVevent.shiftKey ? "S-" : "";
     var LVmeta = PVevent.metaKey ? "M-" : "";
     var LVk = LVctrl + LValt + LVmeta + LVshift + "key" + LVn;
+    if (GVdefaultKeys.hasOwnProperty(LVk)) {
+        return;
+    }
+    PVevent.preventDefault();
     if (GVkeymap.hasOwnProperty(LVk)) {
         var LVkeyAction = GVkeymap[LVk];
         if (typeof LVkeyAction == "string") {
