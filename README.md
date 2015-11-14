@@ -57,7 +57,8 @@ Programs must define all global variables and require modules by one of...
 Code is transformed so that any attempt to access a user-defined property causes
 the code to refer instead to the property name enclosed in backticks. Using a
 property `x` of any object will be translated to use of property \``x`\`.
-Exceptions are listed in `runtime.js`.
+
+<img height="650px" src="https://raw.githubusercontent.com/dbpokorny/autoclave/master/docs/AutoclaveTransformations.png" />
 
 ## Filesystem
 
