@@ -41,11 +41,11 @@ objects in the following ways:
 
 ## Implementation
 
-Autoclave is supported by by static code transformations and a runtime library.
+Autoclave is supported by static code transformations and a runtime library.
 JavaScript code must refrain from using
- - object-oriented functions
- - exception handling
- - the slash-delimited regular expression syntax
+ - object-oriented features (`new` and `constructor`)
+ - exception handling (`throw`, `try`, and `catch`)
+ - the slash-delimited regular expression syntax (`/[a-zA-Z0-9_]*/`)
  - invalid identifiers listed in token.js
  - ...
 
@@ -55,9 +55,11 @@ Programs must define all global variables and require modules by one of...
      to the repository root: `git@github.com:autoclave/fs.js`
    - current working directory: `./module.js`
 
-Code is transformed so that any attempt to access a user-defined property causes
-the code to refer instead to the property name enclosed in backticks. Using a
-property `x` of any object will be translated to use of property \``x`\`.
+Both code transformations and runtime library functions support the following
+change in program behavior: with a few exceptions, access to `x[y]` is translated
+to `x[\`y\`]`. Without this translation (which is invisible to the programmer) it
+would be necessary to maintain a list of prohibited members names for reading and
+writing.
 
 <img height="650px" src="https://raw.githubusercontent.com/dbpokorny/autoclave/master/docs/AutoclaveTransformations.png" />
 
@@ -65,5 +67,5 @@ property `x` of any object will be translated to use of property \``x`\`.
 
 It is possible for a program to read from and write to the filesystem. This data
 is stored in filesys/user/repo, so a path such as "path/to/file" will effectively
-read and write filesys/user/repo/path/to/file. All reads and writes must use
-relative pathnames
+read and write filesys/user/repo/path/to/file. All reads and writes in translated
+code must use relative pathnames
