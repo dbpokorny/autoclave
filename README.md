@@ -1,5 +1,6 @@
 # autoclave.js
 
+<img height="650px" src="https://raw.githubusercontent.com/dbpokorny/autoclave/master/docs/small_logo.png" />
 [Updated Nov 14, 2015]
 
 Today, if you want to distribute a node.js package that depends on another
