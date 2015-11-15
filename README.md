@@ -22,19 +22,19 @@ Whereas most modern operating systems limit the access rights of executing
 programs, autoclave-transformed programs are presented with what appears to be
 ordinary system resources. Autoclave may implement these with conditions such as:
 
- - access to the network may be rate-limited
- - access to the disk may be rate-limited and capped
- - file paths may be checked and mapped
+ - rate-limit access to the network
+ - rate-limit disk access and enforce quota
+ - validate and map file paths
  - ...
 
 From the point of view of the executing program, there is no "autoclave API". From
 the point of view of the autoclave client, it is possible to get information
-about a given JavaScript program prior to execution:
+about a JavaScript program prior to execution:
  - the modules it requires (when the argument to `require(...)` is a constant)
  - the built-in global variables it uses
 
-During execution, an autoclave client may alter the emulated behavior of the
-virtual machine in the following ways:
+During execution, an autoclave client may alter the apparent behavior of emulated
+objects in the following ways:
  - intercept attempts to get / set the value of *any* property of *any* object
  - intercept attempts to determine if the object has a given property
 
