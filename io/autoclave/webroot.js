@@ -54,7 +54,7 @@ var FFserverReady = function FFserverReady() {
                 PVresponse.end("404 error");
             }
         }).listen(8443);
-        console.log("https server running\n");
+        console.log("https server running");
     }
 };
 
