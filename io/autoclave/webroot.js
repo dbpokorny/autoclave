@@ -25,10 +25,13 @@ var GVget = {
         "font-family: Courier;" +
         "}" +
     "h1 { color:#00008b; text-align: center; }" +
+    "div { text-align: center; }" +
 "</style>" +
 "</head>" +
     '<body>' +
+'<div>' +
 '<img src="/logo.png" />' +
+'</div>' +
 '<h1>autoclave.io</h1>' +
     "</body>" +
 "</html>"]
