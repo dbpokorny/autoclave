@@ -3,3 +3,4 @@ cache/*
 node_modules/*
 req.js
 filesys/*
+nohup.out

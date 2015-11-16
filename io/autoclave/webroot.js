@@ -20,19 +20,20 @@ var GVget = {
 '<script type="application/javascript" src="/jquery-2.1.4.js"></script>' +
 "<style>" +
     "body {" +
-        "background-color: #505050;" +
-        "color: white;" +
-        "font-family: Courier;" +
+	"background: #87e0fd;" +
+	"background: -moz-linear-gradient(left,  #87e0fd 0%, #53cbf1 40%, #05abe0 100%);" +
+	"background: -webkit-linear-gradient(left,  #87e0fd 0%,#53cbf1 40%,#05abe0 100%);" +
+	"background: linear-gradient(to right,  #87e0fd 0%,#53cbf1 40%,#05abe0 100%);" +
+	"filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#87e0fd', endColorstr='#05abe0',GradientType=1 );" +
         "}" +
-    "h1 { color:#00008b; text-align: center; }" +
-    "div { text-align: center; }" +
+    "div { color:#00008b; text-align: center; font-family : sans-serif; font-weight: light; font-size: 1em; }" +
 "</style>" +
 "</head>" +
     '<body>' +
 '<div>' +
 '<img src="/logo.png" />' +
 '</div>' +
-'<h1>autoclave.io</h1>' +
+'<div>autoclave.io</div>' +
     "</body>" +
 "</html>"]
 };
