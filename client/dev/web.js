@@ -55,8 +55,7 @@ var GVget = {
 "</head>" +
 '<body>' +
     "<h1>autoclave.io</h1>" +
-    '<div>Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam  ' +
-    'saepius.                                                           </div>' +
+    '<div>Lorem</div>' +
     '<button onclick="FFdemoPost();">click me</button>' +
 "</body></html>"
 ]
@@ -70,7 +69,7 @@ RRfs.readFile('./favicon.ico', function (err, data) {
     GVget["/favicon.ico"] = ["static","image/x-icon",data];
 });
 
-RRfs.readFile('./jquery-2.1.4.js', function (err, data) {
+RRfs.readFile('client/dev/jquery-2.1.4.js', function (err, data) {
     if (err) {
         console.log("error reading jquery");
         return;
@@ -140,8 +139,8 @@ var FFmakeMainPage = function FFmakeMainPage() {
 
 FFmakeMainPage();
 
-GVget['/prompt'] = ["load", "text/html", "client/prompt.html"];
-GVget['/prompt.js'] = ["load", "application/javascript", "client/prompt.js"];
+GVget['/prompt'] = ["load", "text/html", "client/dev/prompt.html"];
+GVget['/prompt.js'] = ["load", "application/javascript", "client/dev/prompt.js"];
 GVget['/unbindBackspace.js'] = ["load", "application/javascript", "client/unbindBackspace.js"];
 
 var GVerror = [];

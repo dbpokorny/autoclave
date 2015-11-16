@@ -17,7 +17,7 @@ var GVget = {
     "/" :["static", "text/html",
 "<!doctype html><html>" +
     "<head>" + 
-'<script type="application/javascript" src="/jquery-2.1.4.js"></script>' +
+'<script type="application/javascript" src="/jquery-2.1.4.min.js"></script>' +
 "<style>" +
     "body {" +
 	"background: #87e0fd;" +
@@ -68,7 +68,7 @@ FFloadFile('/home/dbp/ssl/server/my-server.crt.pem', function (PVx) {
     GVoptions.cert = PVx; FFserverReady(); });
 FFloadFile('client/favicon.ico', function (PVx) {
     GVget["/favicon.ico"] = ["static", "image/x-icon", PVx]; });
-FFloadFile('client/jquery-2.1.4.js', function (PVx) {
-    GVget["/jquery-2.1.4.js"] = ["static", "application/javascript", PVx]; });
+FFloadFile('client/prod/jquery-2.1.4.min.js', function (PVx) {
+    GVget["/jquery-2.1.4.min.js"] = ["static", "application/javascript", PVx]; });
 FFloadFile('client/logo.png', function (PVx) {
     GVget["/logo.png"] = ["static", "image/png", PVx]; });
