@@ -10,7 +10,6 @@ test: $(SUITE)
 README.html: README.md
 	ruby -e "require 'github/markup'; puts GitHub::Markup.render('README.md',File.read('README.md'))" > README.html
 
-
 $(LOC)/token.js: token.js tree.js tmpl/header.js
 	node tree.js token.js
 

@@ -26,6 +26,6 @@
 // Rate-limited actions
 //
 // - reading/writing files
-//   it is possible to read/write any URL. This is translated by the runtime to
-//   reads and writes against the filesystem in a subdirectory of ghcache (in the
-//   git repository itself)
+//   it is possible to read/write any URL. This is translated by the virtual
+//   runtime library to reads and writes against the filesystem in a subdirectory
+//   of cache/gh (in the git repository itself)

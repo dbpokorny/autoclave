@@ -1,56 +1,42 @@
 # <img src="https://raw.githubusercontent.com/dbpokorny/autoclave/master/docs/small_logo.png" /> autoclave.js
 
+> <i>"Note that running untrusted code is a tricky business requiring great care.</i>
+> <i>vm.runInContext is quite useful, but safely running untrusted code requires a</i>
+> <i>separate process."</i>
+>
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- <a href="https://nodejs.org/api/vm.html">Node.js - "vm"</a>
 
-[Updated Nov 14, 2015]
+Autoclave.js is a
+<a href="https://en.wikipedia.org/wiki/Sandbox_(software_development)">sandbox</a>
+based on a
+<a href="https://en.wikipedia.org/wiki/Source-to-source_compiler">transpiler</a>
+and <a href="https://en.wikipedia.org/wiki/Shim_(computing)">shim</a>
+that enforces rules, restrictions, rate-limits, and caps on the behavior of code
+of unknown origin so that the host is protected from malicious / spammy
+operations [1]. It is intended to support the creation of a learning tool that,
+together with a web-based Git network (GitHub, GitLab, ...) gives visitors a
+complete <a href="https://en.wikipedia.org/wiki/Toolchain">toolchain</a>.
 
-Today, if you want to distribute a node.js package that depends on another
-package, you indicate this with metadata in "package.json" and require the user to
-use "npm install" to sort out the dependencies between packages.
+Student code may:
+ - respond to HTTP requests routed to their application's pathname
+ - access the file system in response to web visitor
+ - fetch, transform, and report on data from the web via HTTP
+ - depend on other code by using require-by-URL [2]
 
-Autoclave complements this network by giving your code a new way to execute
-semi-trusted JavaScript that resides on *any* GitHub repository by passing a URL
-to `require`:
+Since it ordinarily runs on a node.js server, there is no need for the student to
+learn HTML, the DOM, CSS, or any other web technology before diving into
+JavaScript programming.
 
-    var file = require("git@github.com:ghuser/ghrepo/path/to/file.js");
+## Specification
 
-Code loaded this way, which must be written in a sub-language of JavaScript, is
-first subject to sanitization and static transformations. The generated files,
-which are in one-to-one correspondence with the originals, use surrogate library
-functions to implement basic language and system features such as
-`Object.keys(...)`, `require(...)`, and `fs`.
-
-Whereas most modern operating systems limit the access rights of executing
-programs, autoclave-transformed programs are presented with what appears to be
-ordinary system resources. Autoclave may implement these with conditions such as:
-
- - rate-limit access to the network
- - rate-limit disk access and enforce quota
- - validate and map file paths
- - ...
-
-From the point of view of the executing program, there is no "autoclave API". From
-the point of view of the autoclave client, it is possible to get information
-about a JavaScript program prior to execution:
- - the modules it requires (when the argument to `require(...)` is a constant)
- - the built-in global variables it uses
-
-During execution, an autoclave client may alter the apparent behavior of emulated
-objects in the following ways:
- - intercept attempts to get / set the value of *any* property of *any* object
- - intercept attempts to determine if the object has a given property
-
-## Implementation
-
-Autoclave is supported by static code transformations and a runtime library.
-JavaScript code must refrain from using
+JavaScript input code must refrain from using
  - object-oriented features (`new` and `constructor`)
  - exception handling (`throw`, `try`, and `catch`)
- - the slash-delimited regular expression syntax (`/[a-zA-Z0-9_]*/`)
+ - the slash-delimited regular expression literal syntax (`/[a-zA-Z0-9_]*/`)
  - invalid identifiers listed in token.js
- - ...
 
 Programs must define all global variables and require modules by one of...
-   - identifier: `fs`, `path`, ...
+   - identifier, such as `fs`, `path`, ...
    - "git file url" which joins a git URL for a repository and a pathname relative
      to the repository root: `git@github.com:autoclave/fs.js`
    - current working directory: `./module.js`
@@ -68,4 +54,18 @@ writing.
 It is possible for a program to read from and write to the filesystem. This data
 is stored in filesys/user/repo, so a path such as "path/to/file" will effectively
 read and write filesys/user/repo/path/to/file. All reads and writes in translated
-code must use relative pathnames
+code must use relative pathnames.
+
+[1] A variety of techniques are applied: globals are re-named, property names are
+enclosed in backticks, and network and disk access is restricted to a list of
+pathnames, rate-limited, and capped. Accessing a property of an object is
+virtualized as a kind of "lightweight in-process system call". In addition, mock
+versions of basic system resources (like network and disk) are mediated by the
+virtual runtime library.
+
+ - source-to-source compilation protects the system from code of unknown origin
+ - access to system resources is restricted and rate-limited by the user
+
+[2] With `require("git@github.com:ghuser/ghrepo/path/to/file.js")`. When using
+`require` this way, source files are first compiled to the sandbox version before
+execution.

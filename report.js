@@ -1,9 +1,6 @@
-// Generate a report on a file for display on the web
+// Generate a web report on a file
 //
-// First of all, "git URL" is a bit misleading. Since gift doesn't take a protocol
-// prefix these are not, strictly speaking, URLs.
-//
-// Encode the file URL and put it in the URL argument 'js'. The http endpoint
+// Encode the git file URL and put it in the URL argument 'js'. The http endpoint
 //
 //     /report?js=git%40github.com%3Auser%2Frepo%2Fpath%2Fto%2Ffile.js
 //
@@ -12,7 +9,7 @@
 // - Title of page in <h2>: the file URL
 //   - title links to local cache if it exists
 // - is there a local cache of the file?
-//   - if the local cache exists in ghcache/ then use it
+//   - if the local cache exists in cache/gh then use it
 //   - if the local cache exists in filecache/ then use it
 //   - otherwise, request() the file and cache it in filecache/
 // - what is the path to the local cache of the file?
