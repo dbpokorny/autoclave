@@ -7,7 +7,7 @@ CORE1=token.js table.js tree.js acutil.js
 CORE2=$(LOC)/token.js $(LOC)/table.js $(LOC)/tree.js $(LOC)/acutil.js
 
 # does the generated code work?
-itertest: $(CORE2)$ (LOCFS)/tree.js
+itertest: $(CORE2) $(LOCFS)/tree.js
 	node acbuild/js/cache/gh/__local__/__local__/tree.js tree.js
 
 test: $(LOC)/test/mutual_recursion.js

@@ -3,8 +3,8 @@
 // AC - reserved namespace
 // AG - global remap prefix
 var ACpassStrings = ["apply", "concat", "filter", "forEach", "indexOf", "join",
-    "length", "map", "pop", "push", "reduce", "reduceRight", "replace", "reverse",
-    "slice", "sort", "splice", "split", "toString"];
+    "lastIndexOf", "length", "map", "pop", "push", "reduce", "reduceRight",
+    "replace", "reverse", "slice", "sort", "splice", "split", "toString"];
 var ACpass = {};
 ACpassStrings.forEach(function (PVk) { ACpass["#" + PVk] = 1; });
 
