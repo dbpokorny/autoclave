@@ -66,5 +66,5 @@ The shim intercepts and routes
  - mock versions of built-in modules
 
 [2] With `require("git@github.com:ghuser/ghrepo/path/to/file.js")`. When using
-`require` this way, source files are first compiled to the sandbox version before
-execution.
+`require` this way, source files are first compiled to the sandbox version and
+then executed in the <a href="https://nodejs.org/api/vm.html">Node virtual machine</a> (not yet implemented).
