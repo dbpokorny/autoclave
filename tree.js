@@ -596,11 +596,18 @@ var GVheaderCache = null;
 
 // PVk(error, draft)
 var FFtreeDraft = function FFtreeDraft(PVurl, PVfilename, PVk) {
-    assert(PVk.length == 2);
+    // valid PVurl
     var LVparse = FFparseFileUrl(PVurl);
     if (LVparse.MMrc) {
         return PVk(LVparse, null);
     }
+    // valid PVfilename
+    var LVcheckPath = FFcheckFilePath(PVfilename.split('/'));
+    if (LVcheckPath.MMrc) {
+        return PVk(LVcheckPath, null);
+    }
+    // valid PVk
+    assert(PVk.length == 2);
     var LVuser = LVparse.MMuser;
     var LVrepo = LVparse.MMrepo;
     var LVnet = LVparse.MMnet;
@@ -622,11 +629,12 @@ var FFtreeDraft = function FFtreeDraft(PVurl, PVfilename, PVk) {
 '// var ACnet = "' + LVnet + '";\n' +
 'var ACuser = "' + LVuser + '";\n' +
 'var ACrepo = "' + LVrepo + '";\n' +
+'var ACfilename = "' + PVfilename + '";\n' +
 'var ACnetworkCode = ' + JSON.stringify(GVnetworkCode) + ';\n' +
 '// var ACnetDomain = ' + JSON.stringify(GVnetDomain) + ';\n');
         var LVfooter = (
-'if (module["`exports`"]) {\n' +
-'    ACmodule.exports = module["`exports`"];\n' +
+'if (AGmodule["`exports`"]) {\n' +
+'    module.exports = AGmodule["`exports`"];\n' +
 '}\n');
         if (GVheaderCache) {
             return PVk(null, LVpreHeader + GVheaderCache + LVdraft + LVfooter);
@@ -691,6 +699,7 @@ var FFbatch = function FFbatch(PVurl, PVk) {
 
 // no return value
 var FFbatchEpilogue = function (PVe, PVfiles) {
+    console.log("FFbatchEpilogue");
     if (PVe) {
         console.log(PVe);
         console.log("wrote files: " + PVfiles);
@@ -701,6 +710,7 @@ var FFbatchEpilogue = function (PVe, PVfiles) {
 
 // no return value
 var FFfullMainPath = function FFfullMainPath(PVurl) {
+    console.log("FFfullMainPath");
     RRfs.readFile(PVurl, function (PVe, PVd) {
         if (PVe) { console.log(PVe); return; }
         var LVpath = 'cache/gh/__local__/__local__/' + PVurl;
@@ -708,8 +718,6 @@ var FFfullMainPath = function FFfullMainPath(PVurl) {
             if (PVe2) { console.log(PVe2); return; }
             console.log('copy ' + PVurl + ' to ' + LVpath);
             var LVnewUrl = 'git@github.com:__local__/__local__/' + PVurl;
-            console.log(process.argv[0] + ' ' + process.argv[1] + ' ' +
-                LVnewUrl);
             FFbatch(LVnewUrl, FFbatchEpilogue);
         });
     });
@@ -717,6 +725,7 @@ var FFfullMainPath = function FFfullMainPath(PVurl) {
 
 // no return value
 var FFfullMain = function FFfullMain(PVurl) {
+    console.log("FFfullMain");
     if (PVurl.indexOf('@') != -1) {
         FFbatch(PVurl, FFbatchEpilogue);
     }
@@ -728,6 +737,7 @@ var FFfullMain = function FFfullMain(PVurl) {
         }
     });
 };
+
 
 // Usage: node tree.js git@github.com:user/repo/path/to/file.js
 // Usage: node tree.js file

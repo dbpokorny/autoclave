@@ -1,13 +1,12 @@
-.PHONY: clean
+.PHONY: clean cleanfs
 
 LOC=acbuild/js/cache/gh/__local__/__local__
 
 CORE1=token.js table.js tree.js acutil.js
 CORE2=$(LOC)/token.js $(LOC)/table.js $(LOC)/tree.js $(LOC)/acutil.js
-SUITE=$(CORE2) $(LOC)/hello.js
 
 # does the generated code work?
-itertest: $(SUITE)
+itertest: $(CORE2)
 	node acbuild/js/cache/gh/__local__/__local__/tree.js tree.js
 
 test: $(LOC)/test/mutual_recursion.js
@@ -30,9 +29,6 @@ $(LOC)/tree.js: tree.js tmpl/header.js
 $(LOC)/acutil.js: acutil.js tree.js tmpl/header.js
 	node tree.js acutil.js
 
-$(LOC)/hello.js: tree.js hello.js tmpl/header.js
-	node tree.js hello.js
-
 clean:
 	@rm -rf acbuild
 	@mkdir acbuild
@@ -40,4 +36,4 @@ clean:
 	@mkdir acbuild/html 
 	@mkdir acbuild/scope
 	@mkdir acbuild/js   
-	@rm -f  README.html
+	@rm -f README.html

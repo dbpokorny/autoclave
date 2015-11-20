@@ -1,3 +1,4 @@
+console.log("loading acutil...");
 var assert = require('assert');
 var RRfs = require('fs');
 var DCsegmentError = -20;
@@ -45,3 +46,4 @@ module.exports = {
     FFcheckFilePath : FFcheckFilePath,
     FFwalkTreeSync : FFwalkTreeSync
 };
+console.log("...done loading acutil");

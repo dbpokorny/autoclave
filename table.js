@@ -1,4 +1,7 @@
 // construct parsing table
+//
+// 1 The globals listed in GVglobalNameStrings are translated by adding the
+//   prefix "AG"
 
 "use strict";
 
@@ -45,8 +48,9 @@ var AF   = 'AF';   // anonymous function
 var NF   = 'NF';   // named function
 var PL   = 'PL';   // parameter list
 
+// These are the 
 var GVglobalNameStrings = ['console', 'decodeURI', 'decodeURIComponent',
-    'encodeURI', 'encodeURIComponent', 'escape', 'fs', 'module', 'process',
+    'encodeURI', 'encodeURIComponent', 'escape', 'isNaN', 'module', 'process',
     'require', 'undefined', 'unescape', 'Array', 'JSON', 'Math', 'Object',
     'RegExp'];
 
@@ -393,13 +397,12 @@ var GVrulesAndReducers = [
         function (PVcx,PVao,PVx) { return [PVcx,PVx]; },
         function (PVcx,PVao,PVx) { return [PVcx,PVx]; },
         function (PVcx,PVao,PVx) {
-            var LVsetItemCheck = (PVao == "=" &&
-                PVcx instanceof Array && PVcx[0] == "ACgetItem");
-            if (LVsetItemCheck) {
-                return ['ACsetItem','(',PVcx[2],',',PVcx[4],',',PVx,')'];
-            }
-            return [PVcx,PVao,PVx];
-        },
+            if (PVao == "=" && PVcx instanceof Array) {
+                if (PVcx[0] == "ACgetItemD") {
+                    return ['ACsetItemD','(',PVcx[2],',',PVcx[4],',',PVx,')']; }
+                if (PVcx[0] == "ACgetItemB") {
+                    return ['ACsetItemB','(',PVcx[2],',',PVcx[4],',',PVx,')']; } }
+            return [PVcx,PVao,PVx]; },
         function (PVcx,PVao,PVx) { return [PVcx,PVao,PVx];},
     [AO,'->',['=']],
         function (PVx) { return "eq"; },
@@ -767,13 +770,13 @@ var GVrulesAndReducers = [
         function (PVx,PV_,PVm) {
             return (PVm.MMchars == "hasOwnProperty" ?
                     ['AChasItemCurry','(',PVx,')'] : 
-                    ['ACgetItem','(',PVx,',',('"' + PVm.MMchars + '"'),')']); },
+                    ['ACgetItemD','(',PVx,',',('"' + PVm.MMchars + '"'),')']); },
         function (PVx,PV_,PVm) { return [PVx,'.',PVm.MMchars]; },
     [MEMX,'->',[MEMX,'[',X,']']],
         function (PVx,PV_,PVs,PV__) { return [PVx,'[',PVs,']']; },
         function (PVx,PV_,PVs,PV__) { return [PVx,PVs]; },
         function (PVx,PV_,PVs,PV__) { return [PVx,PVs]; },
-        function (PVx,PV_,PVs,PV__) { return ['ACgetItem','(',PVx,',',PVs,')']; },
+        function (PVx,PV_,PVs,PV__) { return ['ACgetItemB','(',PVx,',',PVs,')']; },
         function (PVx,PV_,PVs,PV__) { return [PVx,'[',PVs,']']; },
     [ARGL,'->',[X]],
         function (PVx) { return [PVx]; },

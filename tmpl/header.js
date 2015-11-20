@@ -2,33 +2,11 @@
 
 // AC - reserved namespace
 // AG - global remap prefix
-var ACpassStrings = ["apply", "concat","filter", "forEach",
-   "indexOf", "join", "length", "map",
-   "max", "min", "pop", "push", "reduce", "reduceRight",
-   "replace", "reverse", "slice", "sort", "splice", "split", "toString",
-];
+var ACpassStrings = ["apply", "concat", "filter", "forEach", "indexOf", "join",
+    "length", "map", "pop", "push", "reduce", "reduceRight", "replace", "reverse",
+    "slice", "sort", "splice", "split", "toString"];
 var ACpass = {};
 ACpassStrings.forEach(function (PVk) { ACpass["#" + PVk] = 1; });
-
-var ACsaved = {};
-ACsaved.MMArray = Array;
-// ACsaved.MMObject = Object;
-ACsaved.MMobjectKeys = Object.keys;
-ACsaved.MMRegExp = RegExp;
-ACsaved.MMisNaN = isNaN;
-// ACsaved.MMconsole = console;
-ACsaved.MMconsoleLog = console.log;
-ACsaved.MMescape = escape;
-ACsaved.MMunescape = unescape;
-ACsaved.MMdecodeURI = decodeURI;
-ACsaved.MMdecodeURIComponent = decodeURIComponent;
-ACsaved.MMencodeURI = encodeURI;
-ACsaved.MMencodeURIComponent = encodeURIComponent;
-ACsaved.MMmodule = module;
-// ACsaved.MMpath = require('path');
-ACsaved.MMrequire = require;
-// ACsaved.MMutil = require('util');
-ACsaved.MMutilFormat = require('util').format;
 
 var ACfileUrlSegmentError = -20;
 var ACfileUrlSegmentErrorMsg = "Invalid pathname segment";
@@ -47,83 +25,6 @@ var ACcheckFilePath = function ACcheckFilePath(PVsegments) {
     return { MMrc : 0 };
 };
 
-var AGconsole = {"`log`" : function (PVx) { ACsaved.MMconsoleLog(
-        "git@" + ACdomain + ":" + ACuser + "/" + ACrepo + "> " + PVx); } };
-var AGprocess = { "`argv`" : process.argv.slice(0,process.argv.length) };
-ACsaved.MMfs = require('fs');
-AGfs = {"`readFile`" : function (PV1, PV2, PV3) {
-        var LVparse = ACcheckFilePath(PV1.toString().split('/'));
-        if (LVparse.MMrc == 0) {
-            var LVpath = ACfsRoot + "/" + PV1;
-            if (PV3 == undefined) {
-                return ACsaved.MMfs.readFile(LVpath, PV2);
-            } else {
-                return ACsaved.MMfs.readFile(LVpath, PV2, PV3);
-            }
-        }
-        ACsaved.MMconsoleLog('invalid pathname: ' + PV1.toString());
-    },
-    "`writeFile`" : function (PV1, PV2, PV3, PV4) {
-        var LVparse = ACcheckFilePath(PV1.toString().split('/'));
-        if (LVparse.MMrc == 0) {
-            var LVpath = ACfsRoot + "/" + PV1;
-            ACsaved.MMconsoleLog('writing to ' + LVpath);
-            if (PV4 == undefined) {
-                return ACsaved.MMfs.writeFile(LVpath, PV2, PV3);
-            } else {
-                return ACsaved.MMfs.writeFile(LVpath, PV2, PV3, PV4);
-            }
-        }
-        ACsaved.MMconsoleLog('invalid pathname: ' + PV1.toString());
-    }
-};
-
-var AGArray = {"`isArray`" :
-    function (PVx) { return ACsaved.MMArray.isArray(PVx); } };
-
-var AGObject = {"`keys`" :
-    function (PVobj) {
-        return ACsaved.MMobjectKeys(PVobj).filter(function (PVx) {
-            return (! ACsaved.MMisNaN(PVx)) ||
-            (typeof PVx == "string" && PVx.length > 0 && PVx[0] == "`" &&
-             PVx[PVx.length - 1] == "`");
-        }).map(function (PVx) {
-            return ACsaved.MMisNaN(PVx) ? PVx.slice(1, PVx.length - 1) : PVx; });
-    }
-};
-
-var ACgetItem = function ACgetItem(PVx, PVy) {
-    if (ACpass.hasOwnProperty("#" + PVy) || (! ACsaved.MMisNaN(PVy))) {
-        var LVx = PVx[PVy];
-        if (typeof LVx == "function") {
-            return LVx.bind(PVx);
-        } else {
-            return LVx;
-        }
-    } else {
-        var LVx = PVx["`" + PVy.toString() + "`"];
-        return LVx;
-    }
-};
-var ACsetItem = function ACsetItem(PVx, PVy, PVz) {
-    if (! ACsaved.MMisNaN(PVy)) {
-        PVx[PVy] = PVz;
-    } else {
-        PVx["`" + PVy.toString() + "`"] = PVz;
-    }
-};
-var AChasItem = function AChasItem(PVx, PVy) {
-    if (ACpass.hasOwnProperty("#" + PVy) || (! ACsaved.MMisNaN(PVy))) {
-        return PVx.hasOwnProperty(PVy);
-    } else {
-        return PVx.hasOwnProperty("`" + PVy.toString() + "`");
-    }
-};
-var AChasItemCurry = function AChasItemCurry(PVx) {
-    var LVf = function f (PVy) { return AChasItem(PVx,PVy); };
-    return LVf;
-};
-
 var ACfileUrlError = -10;
 var ACfileUrlErrorMsg = "Cannot read file URL";
 var ACunknownDomainError = -30;
@@ -139,8 +40,7 @@ var ACparseFileUrl = function ACparseFileUrl(PVurl) {
     var LVdomain = PVurl.slice(4,LVcolon);
     if (! ACnetworkCode.hasOwnProperty(LVdomain)) {
         return { MMrc : ACunknownDomainError, MMmsg : ACunknownDomainErrorMsg,
-            MMurl : PVurl
-        };
+            MMurl : PVurl };
     }
     var LVsegments = PVurl.slice(LVcolon + 1).split("/");
     if (LVsegments.length < 2) {
@@ -157,38 +57,131 @@ var ACparseFileUrl = function ACparseFileUrl(PVurl) {
         MMpathname : PVurl.slice(LVcolon + 1) };
 };
 
-AGutil = {"`format`" : function (PVx) { return ACsaved.MMutilFormat(PVx); } };
+var AGconsole = {"`log`" : function (PVx) { console.log(
+        "[" + ACfilename + "]" + 
+        "git@" + ACdomain + ":" + ACuser + "/" + ACrepo + "> " + PVx); } };
+var AGprocess = { "`argv`" : process.argv.slice(0,process.argv.length) };
+var ACrequireThunks = {};
+ACrequireThunks.MMfs = function () {
+    var LVfs = require('fs');
+    return {
+        "`readFile`" : function (PV1, PV2, PV3) {
+            var LVparse = ACcheckFilePath(PV1.toString().split('/'));
+            if (LVparse.MMrc == 0) {
+                var LVpath = ACfsRoot + "/" + PV1;
+                if (PV3 == undefined) {
+                    return LVfs.readFile(LVpath, PV2);
+                } else {
+                    return LVfs.readFile(LVpath, PV2, PV3);
+                }
+            }
+            console.log('invalid pathname: ' + PV1.toString());
+        },
+        "`writeFile`" : function (PV1, PV2, PV3, PV4) {
+            var LVparse = ACcheckFilePath(PV1.toString().split('/'));
+            if (LVparse.MMrc == 0) {
+                var LVpath = ACfsRoot + "/" + PV1;
+                console.log('writing to ' + LVpath);
+                if (PV4 == undefined) {
+                    return LVfs.writeFile(LVpath, PV2, PV3);
+                } else {
+                    return LVfs.writeFile(LVpath, PV2, PV3, PV4);
+                }
+            }
+            console.log('invalid pathname: ' + PV1.toString());
+        }
+    };
+};
 
-AGescape = function (PVx) { return ACsaved.MMescape(PVx); };
-AGunescape = function (PVx) { return ACsaved.MMunescape(PVx); };
-AGdecodeURI = function (PVx) { return ACsaved.MMdecodeURI(PVx); };
-AGdecodeURIComponent = function (PVx) { return ACsaved.MMdecodeURIComponent(PVx); };
-AGencodeURI = function (PVx) { return ACsaved.MMencodeURI(PVx); };
-AGencodeURIComponent = function (PVx) { return ACsaved.MMencodeURIComponent(PVx); };
-AGRegExp = function (PV1, PV2) {
-    if (PV2 == undefined) {
-        return ACsaved.MMRegExp(PV1);
-    } else {
-        return ACsaved.MMRegExp(PV1, PV2);
+var AGArray = {"`isArray`" :
+    function (PVx) { return Array.isArray(PVx); } };
+
+var AGObject = {"`keys`" :
+    function (PVobj) {
+        return ObjectKeys(PVobj).filter(function (PVx) {
+            return (! isNaN(PVx)) ||
+            (typeof PVx == "string" && PVx.length > 0 && PVx[0] == "`" &&
+             PVx[PVx.length - 1] == "`");
+        }).map(function (PVx) {
+            return isNaN(PVx) ? PVx.slice(1, PVx.length - 1) : PVx; });
     }
 };
-AGmodule = {"`id`" : ACsaved.MMmodule.id};
-AGpath = { "`resolve`" : function (PVx) { return PVx; } };
 
-var ACbuiltins = {
-    assert : require('assert'),
-    fs : AGfs,
-    path : AGpath,
-    util : AGutil
+var ACgetItemB = function ACgetItemB(PVx, PVy) { // x[y]
+    if (ACpass.hasOwnProperty("#" + PVy) || (! isNaN(PVy))) {
+        return PVx[PVy];
+    } else {
+        return PVx["`" + PVy.toString() + "`"];
+    }
+};
+var ACgetItemD = function ACgetItemD(PVx, PVy) { // x.y
+    if (ACpass.hasOwnProperty("#" + PVy) || (! isNaN(PVy))) {
+        var LVx = PVx[PVy];
+        if (typeof LVx == "function") {
+            return LVx.bind(PVx);
+        } else {
+            return LVx;
+        }
+    } else {
+        return PVx["`" + PVy.toString() + "`"];
+    }
+};
+var ACsetItemB = function ACsetItemB(PVx, PVy, PVz) { // x[y] = z
+    if (! isNaN(PVy)) { PVx[PVy] = PVz; } else {
+        PVx["`" + PVy.toString() + "`"] = PVz; } };
+var ACsetItemD = function ACsetItemD(PVx, PVy, PVz) { // x.y = z
+    if (! isNaN(PVy)) { PVx[PVy] = PVz; } else {
+        PVx["`" + PVy.toString() + "`"] = PVz; } };
+var AChasItem = function AChasItem(PVx, PVy) {
+    if (ACpass.hasOwnProperty("#" + PVy) || (! isNaN(PVy))) {
+        return PVx.hasOwnProperty(PVy);
+    } else {
+        return PVx.hasOwnProperty("`" + PVy.toString() + "`");
+    }
+};
+var AChasItemCurry = function AChasItemCurry(PVx) {
+    var LVf = function f (PVy) { return AChasItem(PVx,PVy); };
+    return LVf;
 };
 
-AGrequire = function (PVx) {
+var AGutil = {"`format`" : function (PVx) { return util.format(PVx); } };
+var AGescape = escape;
+var AGunescape = unescape;
+var AGdecodeURI = decodeURI;
+var AGdecodeURIComponent = decodeURIComponent;
+var AGencodeURI = encodeURI;
+var AGencodeURIComponent = encodeURIComponent;
+var AGRegExp = function (PV1, PV2) {
+    if (PV2 == undefined) {
+        return RegExp(PV1);
+    } else {
+        return RegExp(PV1, PV2);
+    }
+};
+var AGmodule = {"`id`" : module.id};
+var AGpath = { "`resolve`" : function (PVx) { return PVx; } };
+var ACbuiltins = {
+    assert : ["static", require('assert')],
+    fs :   ["thunk", ACrequireThunks.MMfs],
+    path : ["static", AGpath],
+    util : ["static", AGutil]
+};
+var AGrequire = function (PVx) {
     if (typeof PVx != "string") {
-        ACsaved.MMconsoleLog("require takes a string argument");
+        console.log("require takes a string argument");
         return undefined;
     }
     if (ACbuiltins.hasOwnProperty(PVx)) {
-        return ACbuiltins[PVx];
+        var LVent = ACbuiltins[PVx];
+        if (LVent[0] == "static") {
+            return LVent[1];
+        } else if (LVent[0] == "thunk") {
+            var LVval = LVent[1]();
+            ACbuiltins[PVx] = ["static", LVval];
+            return LVval;
+        } else {
+            assert(false);
+        }
     }
     if (PVx.slice(0,2) == "./") {
         PVx = ("git@" + ACdomain + ":" + ACuser + "/" + ACrepo + "/" +
@@ -197,12 +190,16 @@ AGrequire = function (PVx) {
     var LVparse = ACparseFileUrl(PVx);
     if (LVparse.MMrc == 0) {
         var LVpath = ACreqRoot + "/" + LVparse.MMnet + "/" + LVparse.MMpathname;
-        return ACsaved.MMrequire(LVpath);
+        console.log("redirect require -> " + LVpath);
+        return require(LVpath);
     }
-    ACsaved.MMconsoleLog("require takes a URL argument");
-    ACsaved.MMconsoleLog(LVparse);
+    console.log("require takes a URL argument");
+    console.log(LVparse);
     return LVparse;
 };
 AGrequire["`main`"] = {};
-AGrequire["`main`"]["`id`"] = ACsaved.MMrequire.id;
-AGundefined = undefined;
+AGrequire["`main`"]["`id`"] = require.main.id;
+var AGundefined = undefined;
+var AGMath = { "`min`" : Math.min, "`max`" : Math.max };
+var AGisNaN = isNaN;
+var AGJSON = { "`stringify`" : JSON.stringify, "`parse`" : JSON.parse};
