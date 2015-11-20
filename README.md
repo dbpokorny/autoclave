@@ -19,7 +19,7 @@ server.
 A student may program a bot to...
  - respond to HTTP requests routed to their application's pathname
  - access the file system in response to web visitor or other event
- - fetch, transform, and report on statistics from the web via HTTP
+ - fetch data from the web via HTTP with <a href="https://www.npmjs.com/package/request">request</a>
  - depend on other code&mdash;including *peer* code&mdash;with
    [require-by-URL](#RequireByUrl).
 
