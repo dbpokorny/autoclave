@@ -2,10 +2,18 @@
 
 LOC=acbuild/js/cache/gh/__local__/__local__
 
-SUITE=$(LOC)/token.js $(LOC)/table.js $(LOC)/tree.js $(LOC)/hello.js
+CORE1=token.js table.js tree.js acutil.js
+CORE2=$(LOC)/token.js $(LOC)/table.js $(LOC)/tree.js $(LOC)/acutil.js
+SUITE=$(CORE2) $(LOC)/hello.js
 
-test: $(SUITE)
+# does the generated code work?
+itertest: $(SUITE)
 	node acbuild/js/cache/gh/__local__/__local__/tree.js tree.js
+
+test: $(LOC)/test/mutual_recursion.js
+
+$(LOC)/test/mutual_recursion.js: $(CORE1) test/mutual_recursion.js
+	node tree.js test/mutual_recursion.js
 
 README.html: README.md
 	ruby -e "require 'github/markup'; puts GitHub::Markup.render('README.md',File.read('README.md'))" > README.html
@@ -18,6 +26,9 @@ $(LOC)/table.js: table.js tree.js tmpl/header.js
 
 $(LOC)/tree.js: tree.js tmpl/header.js
 	node tree.js tree.js
+
+$(LOC)/acutil.js: acutil.js tree.js tmpl/header.js
+	node tree.js acutil.js
 
 $(LOC)/hello.js: tree.js hello.js tmpl/header.js
 	node tree.js hello.js

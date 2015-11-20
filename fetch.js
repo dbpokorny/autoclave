@@ -95,28 +95,7 @@ var FFgitURL = function FFgitURL(PVurl, PVk) {
     });
 };
 
-// Call PVf on all file paths in the repository named at PVroot
-// skip "node_modules"
-var FFwalkTreeSync = function FFwalkTreeSync(PVroot, PVf) {
-    var FFwtHelper = function FFwtHelper(PVpath) {
-        var LVstats = RRfs.statSync(PVpath);
-        if (LVstats.isDirectory()) {
-            var LVls = RRfs.readdirSync(PVpath).filter(function (PVname) {
-                return PVname[0] != '.'; });
-            var LVi;
-            for (LVi = 0; LVi < LVls.length; LVi += 1) {
-                var LVname = LVls[LVi];
-                if (LVname != "node_modules") {
-                    var LVnewPath = PVpath + '/' + LVls[LVi];
-                    FFwtHelper(LVnewPath);
-                }
-            }
-        } else if (LVstats.isFile()) {
-            PVf(PVpath);
-        }
-    }
-    FFwtHelper(PVroot);
-};
+var FFwalkTreeSync = RRacutil.FFwalkTreeSync;
 
 var FFmakeFileUrl = function FFmakeFileUrl(PVpath) {
     assert(PVpath.slice(PVpath.length - 3) == ".js");

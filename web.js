@@ -1,11 +1,8 @@
-// Load the http module to create an http server.
+var assert = require('assert');
 var RRhttp = require('http');
 var RRfs = require('fs');
 var RRescapeHtml = require('escape-html');
-
-var assert = require('assert');
-
-var RRfetch = require('./fetch.js');
+var RRacutil = require('./acutil.js');
 
 // "page mode" is the string that is the first element of the array of a value in
 // GVget or GVpost. It can be one of: "static", "k", or "args".
@@ -93,7 +90,7 @@ GVghUsers.forEach(function (PVuser) {
     });
 });
 
-RRfetch.MMwalkTreeSync('acbuild/scope', function (PVscopeFile) {
+RRacutil.MMwalkTreeSync('acbuild/scope', function (PVscopeFile) {
     assert(PVscopeFile.slice(0,7) == 'acbuild');
     GVget[PVscopeFile.slice(7)] = ["k", function (PVk) {
         PVk(['static', 'text/plain', RRfs.readFileSync(PVscopeFile)]);
@@ -145,7 +142,7 @@ GVget['/unbindBackspace.js'] = ["load", "application/javascript", "client/unbind
 
 var GVerror = [];
 
-RRfetch.MMwalkTreeSync('acbuild/error', function (PVerrorFile) {
+RRacutil.MMwalkTreeSync('acbuild/error', function (PVerrorFile) {
     GVerror.push([PVerrorFile, RRfs.readFileSync(PVerrorFile)]);
 });
 
@@ -190,7 +187,7 @@ var FFparseUrlArgs = function FFparseUrlArgs(PVarglist) {
         var LVeq = PVstr.indexOf('=');
         if (LVeq > 0) {
             var LVargName = PVstr.slice(0,LVeq);
-            if (RegExp("^[a-zA-Z0-9]{1,25}$").test(LVargName)) {
+            if (RegExp("^[-_a-zA-Z0-9]{1,25}$").test(LVargName)) {
                 var LVargValue = PVstr.slice(LVeq + 1);
                 LVresult['#' + LVargName] = decodeURIComponent(LVargValue);
             }
@@ -238,11 +235,25 @@ var FFserver = RRhttp.createServer(function (PVrequest, PVresponse) {
     } else if (GVget.hasOwnProperty(PVrequest.url)) {
         var LVurl = PVrequest.url;
         var LVq = LVurl.indexOf('?');
-        var LVargs = [];
+        var LVargs = {};
         if (LVq > 0) {
             LVargs = FFparseUrlArgs(LVurl.slice(LVq + 1).split('&'));
-            LVurl = LVurl.slice(0,LVq);
+            LVurl = LVurl.slice(0, LVq);
         }
+        var LVurlSegments = LVurl.split('/');
+        var LVcheck = RRacutil.FFcheckFilePath(LVurlSegments);
+        if (LVcheck.MMrc) {
+            PVresponse.writeHead(404, {"Content-Type": "text/plain"});
+            PVresponse.end("404 error");
+            return;
+        }
+        var LVurlPrimary = LVurlSegments.length > 0 ? LVurlSegments[0] : "";
+        // handle primary "s" for source files
+        if (LVurlPrimary == "s") {
+            var LVsourcePath = LVurlSegments.slice(1).join("/");
+            console.log(LVsourcePath);
+        }
+        // handle URL constants
         var LVservice = GVget[LVurl];
         if (LVservice[0] == "k") {
             var LVf = LVservice[1];

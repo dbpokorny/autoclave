@@ -6,6 +6,8 @@ var assert = require("assert");
 var RRfs = require('fs');
 var RRpath = require("path");
 var RRutil = require("util");
+var RRacutil = require("./acutil.js");
+var FFcheckFilePath = RRacutil.FFcheckFilePath;
 
 var FFdeepFlatten = function FFdeepFlatten(PVx) {
     var LVresult = [];
@@ -52,6 +54,10 @@ var FFformatHtml = function FFformatHtml(PVtree) {
         }
     }
     var LVheader = ('<html><head>' +
+            '<script type="application/javascript" src="/jquery-2.1.4.js"></script>' +
+            '<script>' +
+'var FFtoggleElt = function FFtoggleElt(PVid) { $("#" + PVid).f };' +
+            '</script>' +
             '<style>' +
             'a { text-decoration: none;}' +
             '.hiFunction {color:#40ffff;}' +
@@ -117,7 +123,7 @@ var FFdefStackLookup = function FFdefStackLookup(PVdefStack, PVuseName) {
 };
 
 var DCdefError = -10;
-var DCdefErrorDesc = "definition for variable exists in enclosing scope: ";
+var DCdefErrorDesc = "invalid duplicate or shadow variable: ";
 
 // Walk syntax tree and extract def-use data
 var FFwalkTree = function FFwalkTree(PVtree) {
@@ -516,23 +522,6 @@ var GVnetDomain = { gh : 'github.com', gl : 'gitlab.com' };
 // map domain to network code
 var GVnetworkCode = { "github.com" : "gh", "gitlab.com" : "gl" };
 
-var DCfileUrlSegmentError = -20;
-var DCfileUrlSegmentErrorMsg = "Invalid pathname segment";
-var FFcheckFilePath = function FFcheckFilePath(PVsegments) {
-    var LVi;
-    for (LVi = 0; LVi < PVsegments.length; LVi += 1) {
-        var LVsegment = PVsegments[LVi];
-        var LVregExpOK = RegExp("^[-.a-zA-Z0-9_]{2,50}$").test(LVsegment);
-        var LVdotDotFree = LVsegment.indexOf("..") == -1;
-        if (! (LVregExpOK && LVdotDotFree)) {
-            return { MMrc : DCfileUrlSegmentError,
-                MMmsg : DCfileUrlSegmentErrorMsg, MMsegment : LVsegment
-            };
-        }
-    }
-    return { MMrc : 0 };
-};
-
 var DCfileUrlError = -10;
 var DCfileUrlErrorMsg = "Cannot read file URL";
 var DCunknownDomainError = -30;
@@ -700,46 +689,48 @@ var FFbatch = function FFbatch(PVurl, PVk) {
     });
 };
 
+// no return value
+var FFbatchEpilogue = function (PVe, PVfiles) {
+    if (PVe) {
+        console.log(PVe);
+        console.log("wrote files: " + PVfiles);
+        process.exit(1);
+    }
+    console.log("wrote files: " + PVfiles);
+};
+
+// no return value
+var FFfullMainPath = function FFfullMainPath(PVurl) {
+    RRfs.readFile(PVurl, function (PVe, PVd) {
+        if (PVe) { console.log(PVe); return; }
+        var LVpath = 'cache/gh/__local__/__local__/' + PVurl;
+        FFbridgeFile(LVpath, PVd, function (PVe2) {
+            if (PVe2) { console.log(PVe2); return; }
+            console.log('copy ' + PVurl + ' to ' + LVpath);
+            var LVnewUrl = 'git@github.com:__local__/__local__/' + PVurl;
+            console.log(process.argv[0] + ' ' + process.argv[1] + ' ' +
+                LVnewUrl);
+            FFbatch(LVnewUrl, FFbatchEpilogue);
+        });
+    });
+};
+
+// no return value
 var FFfullMain = function FFfullMain(PVurl) {
     if (PVurl.indexOf('@') != -1) {
-        return FFbatch(PVurl, function (PVe, PVfiles) { if (PVe) {
-            console.log(PVe); } console.log("wrote fies: " + PVfiles); } );
+        FFbatch(PVurl, FFbatchEpilogue);
     }
     RRfs.exists(PVurl, function (PVexists) {
         if (PVexists) {
-            RRfs.readFile(PVurl, function (PVe, PVd) {
-                if (PVe) { console.log(PVe); return; }
-                var LVpath = 'cache/gh/__local__/__local__/' + PVurl;
-                FFbridgeFile(LVpath, PVd, function (PVe2) {
-                    if (PVe2) { console.log(PVe2); return; }
-                    console.log('copy ' + PVurl + ' to ' + LVpath);
-                    var LVnewUrl = 'git@github.com:__local__/__local__/' + PVurl;
-                    console.log(process.argv[0] + ' ' + process.argv[1] + ' ' +
-                        LVnewUrl);
-                    return FFbatch(LVnewUrl,
-                        function (PVe3, PVfiles) {
-                            if (PVe3) { console.log(PVe3); }
-                            PVfiles.forEach(function (PVf) {
-                                console.log("wrote file: " + PVf);
-                            });
-                        }
-                    );
-                });
-            });
+            FFfullMainPath(PVurl);
         } else {
-            return FFbatch(PVurl, function (PVerror, PVfiles) {
-                if (PVerror) { console.log(PVerror); }
-                PVfiles.forEach(function (PVf) {
-                    console.log("wrote file: " + PVf);
-                });
-            });
+            FFbatch(PVurl, FFbatchEpilogue);
         }
     });
 };
 
 // Usage: node tree.js git@github.com:user/repo/path/to/file.js
 // Usage: node tree.js file
-
 if (require.main.id === module.id && process.argv.length >= 3) {
     FFfullMain(process.argv[2]);
 }
