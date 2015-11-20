@@ -19,9 +19,9 @@ server.
 A student may program a bot to...
  - respond to HTTP requests routed to their application's pathname
  - access the file system in response to web visitor or other event
- - fetch data from the web via HTTP with <a href="https://www.npmjs.com/package/request">request</a>
+ - fetch data from the web via HTTP with <a href="https://www.npmjs.com/package/request">request</a> (not implemented yet)
  - depend on other code&mdash;including *peer* code&mdash;with
-   [require-by-URL](#RequireByUrl).
+   [require-by-URL](#RequireByUrl)
 
 Since it ordinarily runs on a node.js server, there is no need for the student to
 learn HTML, the DOM, CSS, or any other web technology before diving into
