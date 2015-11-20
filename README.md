@@ -50,6 +50,15 @@ writing.
 
 <img height="650px" src="https://raw.githubusercontent.com/dbpokorny/autoclave/master/docs/ACTransformations.png" />
 
+## Two Levels of Isolation
+
+The host isolates (protects itself) from bot code with
+
+ - static transformations
+ - VM context (not implemented)
+
+Bot code runs in the host process [3].
+
 ## Filesystem
 
 It is possible for a program to read from and write to the filesystem (see
@@ -57,14 +66,25 @@ test/helloFile.js). This data is stored in filesys/user/repo, so a path such as
 "path/to/file" will effectively read and write filesys/user/repo/path/to/file. All
 reads and writes in translated code must use relative pathnames.
 
-[1] The major code transformations are
+## End Notes
+
+### [1]
+
+The major code transformations are
  - Built-in globals are re-named (table.js)
  - property names are enclosed in backticks (table.js, tmpl/header.js)
  - network and disk access is restricted (tmpl/header.js)
+
 The shim intercepts and routes
  - property to compensate for the added backticks
  - mock versions of built-in modules
 
-[2] With `require("git@github.com:ghuser/ghrepo/path/to/file.js")`. When using
+### [2]
+
+With `require("git@github.com:ghuser/ghrepo/path/to/file.js")`. When using
 `require` this way, source files are first compiled to the sandbox version and
 then executed in the <a href="https://nodejs.org/api/vm.html">Node virtual machine</a> (not yet implemented).
+
+### [3]
+
+The quote from the Node manual at the beginning is incorrect.
