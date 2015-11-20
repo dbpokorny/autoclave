@@ -11,7 +11,8 @@ based on a
 and <a href="https://en.wikipedia.org/wiki/Shim_(computing)">shim</a>
 that enforces rules, restrictions, rate-limits, and caps on the behavior of code
 of unknown origin so that the host is protected from both intentional and
-unintentional malicious / spammy / inappropriate operations [1]. It is intended to
+unintentional malicious / spammy / inappropriate operations [Note1](#Note1). It is
+intended to
 support the creation of a learning tool that, together with a web-based Git
 network (GitHub, GitLab, ...) gives visitors a complete
 <a href="https://en.wikipedia.org/wiki/Toolchain">toolchain</a> for
@@ -68,7 +69,7 @@ reads and writes in translated code must use relative pathnames.
 
 ## End Notes
 
-### [1]
+### <a name="Note1"></a>[1]
 
 The major code transformations are
  - Built-in globals are re-named (table.js)
