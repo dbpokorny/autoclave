@@ -699,7 +699,6 @@ var FFbatch = function FFbatch(PVurl, PVk) {
 
 // no return value
 var FFbatchEpilogue = function (PVe, PVfiles) {
-    console.log("FFbatchEpilogue");
     if (PVe) {
         console.log(PVe);
         console.log("wrote files: " + PVfiles);
@@ -710,7 +709,6 @@ var FFbatchEpilogue = function (PVe, PVfiles) {
 
 // no return value
 var FFfullMainPath = function FFfullMainPath(PVurl) {
-    console.log("FFfullMainPath");
     RRfs.readFile(PVurl, function (PVe, PVd) {
         if (PVe) { console.log(PVe); return; }
         var LVpath = 'cache/gh/__local__/__local__/' + PVurl;
@@ -725,7 +723,6 @@ var FFfullMainPath = function FFfullMainPath(PVurl) {
 
 // no return value
 var FFfullMain = function FFfullMain(PVurl) {
-    console.log("FFfullMain");
     if (PVurl.indexOf('@') != -1) {
         FFbatch(PVurl, FFbatchEpilogue);
     }

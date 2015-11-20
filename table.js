@@ -120,7 +120,7 @@ var FFformatHtmlVar = function FFformatHtmlVar(PVt) {
     }
 };
 
-var FFaddBackticks = function FFaddBackticks(PVx) {
+var FFaddStrBackticks = function FFaddStrBackticks(PVx) {
     assert(PVx.length > 0);
     return (PVx[0] + '`' + PVx.slice(1,PVx.length - 1) + '`' + PVx[PVx.length - 1]);
 };
@@ -866,7 +866,7 @@ var GVrulesAndReducers = [
         function (PVn,PV_,PVx) { return [PVn,':',PVx]; },
         function (PVn,PV_,PVx) { return [PVx]; },
         function (PVn,PV_,PVx) { return [PVn,PVx]; },
-        function (PVn,PV_,PVx) { return [FFaddBackticks(PVn.MMchars),':',PVx]; },
+        function (PVn,PV_,PVx) { return [FFaddStrBackticks(PVn.MMchars),':',PVx]; },
         function (PVn,PV_,PVx) { return [FFhtmlEntities(PVn.MMchars),':',PVx]; },
     [PX,'->',['(', X, ')']],
         function (PVx,PVy,PVz) { return ['(',PVy,')']; },

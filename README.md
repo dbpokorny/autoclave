@@ -10,16 +10,19 @@ based on a
 <a href="https://en.wikipedia.org/wiki/Source-to-source_compiler">transpiler</a>
 and <a href="https://en.wikipedia.org/wiki/Shim_(computing)">shim</a>
 that enforces rules, restrictions, rate-limits, and caps on the behavior of code
-of unknown origin so that the host is protected from malicious / spammy
-operations [1]. It is intended to support the creation of a learning tool that,
-together with a web-based Git network (GitHub, GitLab, ...) gives visitors a
-complete <a href="https://en.wikipedia.org/wiki/Toolchain">toolchain</a>.
+of unknown origin so that the host is protected from both intentional and
+unintentional malicious / spammy / inappropriate operations [1]. It is intended to
+support the creation of a learning tool that, together with a web-based Git
+network (GitHub, GitLab, ...) gives visitors a complete
+<a href="https://en.wikipedia.org/wiki/Toolchain">toolchain</a> for
+building a <a href="https://en.wikipedia.org/wiki/Bot">bot</a> that runs on the
+server.
 
-Student code may:
+A student may program a bot to...
  - respond to HTTP requests routed to their application's pathname
- - access the file system in response to web visitor
- - fetch, transform, and report on data from the web via HTTP
- - depend on other code by using require-by-URL [2]
+ - access the file system in response to web visitor or other event
+ - fetch, transform, and report on statistics from the web via HTTP
+ - depend on other code --- including *peer* code --- with require-by-URL [2]
 
 Since it ordinarily runs on a node.js server, there is no need for the student to
 learn HTML, the DOM, CSS, or any other web technology before diving into
@@ -49,20 +52,18 @@ writing.
 
 ## Filesystem
 
-It is possible for a program to read from and write to the filesystem. This data
-is stored in filesys/user/repo, so a path such as "path/to/file" will effectively
-read and write filesys/user/repo/path/to/file. All reads and writes in translated
-code must use relative pathnames.
+It is possible for a program to read from and write to the filesystem (see
+test/helloFile.js). This data is stored in filesys/user/repo, so a path such as
+"path/to/file" will effectively read and write filesys/user/repo/path/to/file. All
+reads and writes in translated code must use relative pathnames.
 
-[1] A variety of techniques are applied: globals are re-named, property names are
-enclosed in backticks, and network and disk access is restricted to a list of
-pathnames, rate-limited, and capped. Accessing a property of an object is
-virtualized as a kind of "lightweight in-process system call". In addition, mock
-versions of basic system resources (like network and disk) are mediated by the
-virtual runtime library.
-
- - source-to-source compilation protects the system from code of unknown origin
- - access to system resources is restricted and rate-limited by the user
+[1] The major code transformations are
+ - Built-in globals are re-named (table.js)
+ - property names are enclosed in backticks (table.js, tmpl/header.js)
+ - network and disk access is restricted (tmpl/header.js)
+The shim intercepts and routes
+ - property to compensate for the added backticks
+ - mock versions of built-in modules
 
 [2] With `require("git@github.com:ghuser/ghrepo/path/to/file.js")`. When using
 `require` this way, source files are first compiled to the sandbox version before

@@ -65,6 +65,14 @@ var ACrequireThunks = {};
 ACrequireThunks.MMfs = function () {
     var LVfs = require('fs');
     return {
+        "`exists`" : function (PV1, PV2) {
+            var LVparse = ACcheckFilePath(PV1.toString().split('/'));
+            if (LVparse.MMrc == 0) {
+                var LVpath = ACfsRoot + "/" + PV1;
+                return LVfs.exists(PV1, PV2);
+            }
+            console.log('invalid pathname: ' + PV1.toString());
+        },
         "`readFile`" : function (PV1, PV2, PV3) {
             var LVparse = ACcheckFilePath(PV1.toString().split('/'));
             if (LVparse.MMrc == 0) {
@@ -98,7 +106,7 @@ var AGArray = {"`isArray`" :
 
 var AGObject = {"`keys`" :
     function (PVobj) {
-        return ObjectKeys(PVobj).filter(function (PVx) {
+        return Object.keys(PVobj).filter(function (PVx) {
             return (! isNaN(PVx)) ||
             (typeof PVx == "string" && PVx.length > 0 && PVx[0] == "`" &&
              PVx[PVx.length - 1] == "`");

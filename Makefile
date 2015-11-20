@@ -1,12 +1,13 @@
-.PHONY: clean cleanfs
+.PHONY: clean cleanfs test itertest
 
 LOC=acbuild/js/cache/gh/__local__/__local__
+LOCFS=filesys/gh/__local__/__local__
 
 CORE1=token.js table.js tree.js acutil.js
 CORE2=$(LOC)/token.js $(LOC)/table.js $(LOC)/tree.js $(LOC)/acutil.js
 
 # does the generated code work?
-itertest: $(CORE2)
+itertest: $(CORE2)$ (LOCFS)/tree.js
 	node acbuild/js/cache/gh/__local__/__local__/tree.js tree.js
 
 test: $(LOC)/test/mutual_recursion.js
@@ -16,6 +17,10 @@ $(LOC)/test/mutual_recursion.js: $(CORE1) test/mutual_recursion.js
 
 README.html: README.md
 	ruby -e "require 'github/markup'; puts GitHub::Markup.render('README.md',File.read('README.md'))" > README.html
+
+# copy 
+$(LOCFS)/tree.js: tree.js
+	cp tree.js $(LOCFS)/tree.js
 
 $(LOC)/token.js: token.js tree.js tmpl/header.js
 	node tree.js token.js
