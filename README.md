@@ -48,7 +48,7 @@ to `x[\`y\`]`. Without this translation (which is invisible to the programmer) i
 would be necessary to maintain a list of prohibited members names for reading and
 writing.
 
-<img height="650px" src="https://raw.githubusercontent.com/dbpokorny/autoclave/master/docs/AutoclaveTransformations.png" />
+<img height="650px" src="https://raw.githubusercontent.com/dbpokorny/autoclave/master/docs/ACTransformations.png" />
 
 ## Filesystem
 
