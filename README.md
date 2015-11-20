@@ -11,8 +11,8 @@ based on a
 and <a href="https://en.wikipedia.org/wiki/Shim_(computing)">shim</a>
 that enforces rules, restrictions, rate-limits, and caps on the behavior of code
 of unknown origin so that the host is protected from both intentional and
-unintentional malicious / spammy / inappropriate operations [Note1](#Note1). It is
-intended to
+unintentional malicious / spammy / inappropriate operations.
+[See details below](#Note1). Autoclave is intended to
 support the creation of a learning tool that, together with a web-based Git
 network (GitHub, GitLab, ...) gives visitors a complete
 <a href="https://en.wikipedia.org/wiki/Toolchain">toolchain</a> for
@@ -23,7 +23,8 @@ A student may program a bot to...
  - respond to HTTP requests routed to their application's pathname
  - access the file system in response to web visitor or other event
  - fetch, transform, and report on statistics from the web via HTTP
- - depend on other code&mdash;including *peer* code&mdash;with require-by-URL [2]
+ - depend on other code&mdash;including *peer* code&mdash;with
+   [require-by-URL](#Note2).
 
 Since it ordinarily runs on a node.js server, there is no need for the student to
 learn HTML, the DOM, CSS, or any other web technology before diving into
@@ -58,7 +59,7 @@ The host isolates (protects itself) from bot code with
  - static transformations
  - VM context (not implemented)
 
-Bot code runs in the host process [3].
+Bot code runs in the [host process](#Note3).
 
 ## Filesystem
 
@@ -80,12 +81,12 @@ The shim intercepts and routes
  - property to compensate for the added backticks
  - mock versions of built-in modules
 
-### [2]
+### <a name="Note2"></a>[2]
 
 With `require("git@github.com:ghuser/ghrepo/path/to/file.js")`. When using
 `require` this way, source files are first compiled to the sandbox version and
 then executed in the <a href="https://nodejs.org/api/vm.html">Node virtual machine</a> (not yet implemented).
 
-### [3]
+### <a name="Note3"></a>[3]
 
 The quote from the Node manual at the beginning is incorrect.
