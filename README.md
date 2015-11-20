@@ -1,8 +1,6 @@
 # <img src="https://raw.githubusercontent.com/dbpokorny/autoclave/master/docs/small_logo.png" /> autoclave.js
 
-> <i>"Note that running untrusted code is a tricky business requiring great care.</i>
-> <i>vm.runInContext is quite useful, but safely running untrusted code requires a</i>
-> <i>separate process."</i> -- <a href="https://nodejs.org/api/vm.html">Node.js - "vm"</a>
+> <i>"Note that running untrusted code is a tricky business requiring great care.</i> -- <a href="https://nodejs.org/api/vm.html">Node.js - "vm"</a>
 
 Autoclave.js is a
 <a href="https://en.wikipedia.org/wiki/Sandbox_(software_development)">sandbox</a>
@@ -11,10 +9,9 @@ based on a
 and <a href="https://en.wikipedia.org/wiki/Shim_(computing)">shim</a>
 that enforces rules, restrictions, rate-limits, and caps on the behavior of code
 of unknown origin so that the host is protected from both intentional and
-unintentional malicious / spammy / inappropriate operations.
-[See details below](#Note1). Autoclave is intended to
-support the creation of a learning tool that, together with a web-based Git
-network (GitHub, GitLab, ...) gives visitors a complete
+unintentional malicious / spammy / inappropriate operations. Autoclave is
+intended to support the creation of a learning tool that, together with a
+web-based Git network (GitHub, GitLab, ...) gives visitors a complete
 <a href="https://en.wikipedia.org/wiki/Toolchain">toolchain</a> for
 building a <a href="https://en.wikipedia.org/wiki/Bot">bot</a> that runs on the
 server.
@@ -24,7 +21,7 @@ A student may program a bot to...
  - access the file system in response to web visitor or other event
  - fetch, transform, and report on statistics from the web via HTTP
  - depend on other code&mdash;including *peer* code&mdash;with
-   [require-by-URL](#Note2).
+   [require-by-URL](#RequireNote).
 
 Since it ordinarily runs on a node.js server, there is no need for the student to
 learn HTML, the DOM, CSS, or any other web technology before diving into
@@ -57,9 +54,15 @@ writing.
 The host isolates (protects itself) from bot code with
 
  - static transformations
+   - Built-in globals are re-named (table.js)
+   - property names are enclosed in backticks (table.js, tmpl/header.js)
+   - network and disk access is restricted (tmpl/header.js)
+ - global variable and property shim (tmpl/header.js)
+   - route property access
+   - mock versions of built-in modules
  - VM context (not implemented)
 
-Bot code runs in the [host process](#Note3).
+Bot code runs in the host process.
 
 ## Filesystem
 
@@ -70,23 +73,10 @@ reads and writes in translated code must use relative pathnames.
 
 ## End Notes
 
-### <a name="Note1"></a>[1]
-
-The major code transformations are
- - Built-in globals are re-named (table.js)
- - property names are enclosed in backticks (table.js, tmpl/header.js)
- - network and disk access is restricted (tmpl/header.js)
-
-The shim intercepts and routes
- - property to compensate for the added backticks
- - mock versions of built-in modules
-
-### <a name="Note2"></a>[2]
+### <a name="RequireNote"></a>[2]
 
 With `require("git@github.com:ghuser/ghrepo/path/to/file.js")`. When using
 `require` this way, source files are first compiled to the sandbox version and
-then executed in the <a href="https://nodejs.org/api/vm.html">Node virtual machine</a> (not yet implemented).
-
-### <a name="Note3"></a>[3]
-
-The quote from the Node manual at the beginning is incorrect.
+then executed in the
+<a href="https://nodejs.org/api/vm.html">Node virtual machine</a>
+(not yet implemented).
