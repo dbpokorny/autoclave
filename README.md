@@ -21,7 +21,7 @@ A student may program a bot to...
  - access the file system in response to web visitor or other event
  - fetch, transform, and report on statistics from the web via HTTP
  - depend on other code&mdash;including *peer* code&mdash;with
-   [require-by-URL](#RequireNote).
+   [require-by-URL](#RequireByUrl).
 
 Since it ordinarily runs on a node.js server, there is no need for the student to
 learn HTML, the DOM, CSS, or any other web technology before diving into
@@ -71,9 +71,7 @@ test/helloFile.js). This data is stored in filesys/user/repo, so a path such as
 "path/to/file" will effectively read and write filesys/user/repo/path/to/file. All
 reads and writes in translated code must use relative pathnames.
 
-## End Notes
-
-### <a name="RequireNote"></a>[2]
+## <a name="RequireByUrl"></a>Require-by-URL
 
 With `require("git@github.com:ghuser/ghrepo/path/to/file.js")`. When using
 `require` this way, source files are first compiled to the sandbox version and
