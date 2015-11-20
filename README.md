@@ -2,9 +2,7 @@
 
 > <i>"Note that running untrusted code is a tricky business requiring great care.</i>
 > <i>vm.runInContext is quite useful, but safely running untrusted code requires a</i>
-> <i>separate process."</i>
->
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- <a href="https://nodejs.org/api/vm.html">Node.js - "vm"</a>
+> <i>separate process."</i> -- <a href="https://nodejs.org/api/vm.html">Node.js - "vm"</a>
 
 Autoclave.js is a
 <a href="https://en.wikipedia.org/wiki/Sandbox_(software_development)">sandbox</a>
