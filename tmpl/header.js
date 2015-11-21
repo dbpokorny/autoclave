@@ -4,26 +4,24 @@
 // AG - global remap prefix
 var ACpassStrings = ["apply", "concat", "filter", "forEach", "indexOf", "join",
     "lastIndexOf", "length", "map", "pop", "push", "reduce", "reduceRight",
-    "replace", "reverse", "slice", "sort", "splice", "split", "toString"];
+    "replace", "reverse", "slice", "sort", "splice", "split", "test", "toString"];
 var ACpass = {};
 ACpassStrings.forEach(function (PVk) { ACpass["#" + PVk] = 1; });
 
 var ACfileUrlSegmentError = -20;
 var ACfileUrlSegmentErrorMsg = "Invalid pathname segment";
-var ACcheckFilePath = function ACcheckFilePath(PVsegments) {
+var ACcheckFilePath = function ACcheckFilePath(PVpathname) {
+    PVpathname = "" + PVpathname;
+    var LVsegments = PVpathname.split("/");
     var LVi;
-    for (LVi = 0; LVi < PVsegments.length; LVi += 1) {
-        var LVsegment = PVsegments[LVi];
+    for (LVi = 0; LVi < LVsegments.length; LVi += 1) {
+        var LVsegment = LVsegments[LVi];
         var LVregExpOK = RegExp("^[-.a-zA-Z0-9_]{2,50}$").test(LVsegment);
         var LVdotDotFree = LVsegment.indexOf("..") == -1;
         if (! (LVregExpOK && LVdotDotFree)) {
             return { MMrc : ACfileUrlSegmentError,
-                MMmsg : ACfileUrlSegmentErrorMsg, MMsegment : LVsegment
-            };
-        }
-    }
-    return { MMrc : 0 };
-};
+                MMmsg : ACfileUrlSegmentErrorMsg, MMsegment : LVsegment }; } }
+    return { MMrc : 0 }; };
 
 var ACfileUrlError = -10;
 var ACfileUrlErrorMsg = "Cannot read file URL";
@@ -34,72 +32,55 @@ var ACparseFileUrl = function ACparseFileUrl(PVurl) {
     var LVcolon = PVurl.indexOf(":");
     if (LVcolon == -1 || PVurl.slice(0,4) != "git@") {
         return { MMrc : ACfileUrlError, MMmsg : ACfileUrlErrorMsg,
-            MMurl : PVurl
-        };
-    }
+            MMurl : PVurl }; }
     var LVdomain = PVurl.slice(4,LVcolon);
     if (! ACnetworkCode.hasOwnProperty(LVdomain)) {
         return { MMrc : ACunknownDomainError, MMmsg : ACunknownDomainErrorMsg,
-            MMurl : PVurl };
-    }
+            MMurl : PVurl }; }
     var LVsegments = PVurl.slice(LVcolon + 1).split("/");
     if (LVsegments.length < 2) {
         return { MMrc : ACfileUrlError, MMmsg : ACfileUrlErrorMsg,
-            MMinfo : "missing user / repo", MMurl : PVurl
-        };
-    }
-    var LVcheckPath = ACcheckFilePath(LVsegments);
+            MMinfo : "missing user / repo", MMurl : PVurl }; }
+    var LVcheckPath = ACcheckFilePath(PVurl.slice(LVcolon + 1));
     if (LVcheckPath.MMrc) {
-        return { MMrc : ACfileUrlError, MMdata : LVcheckPath };
-    }
+        return LVcheckPath; }
     return { MMrc : 0, MMnet : ACnetworkCode[LVdomain],
         MMuser : LVsegments[0], MMrepo : LVsegments[1],
-        MMpathname : PVurl.slice(LVcolon + 1) };
-};
+        MMpathname : PVurl.slice(LVcolon + 1) }; };
 
-var AGconsole = {"`log`" : function (PVx) { console.log(
-        "[" + ACfilename + "]" + 
-        "git@" + ACdomain + ":" + ACuser + "/" + ACrepo + "> " + PVx); } };
+var ACsource = "[" + ACfilename + "]git@" + ACdomain + ":" + ACuser + "/" + ACrepo;
+var AGconsole = {"`log`" : function (PVx) { console.log(ACsource + "> " + PVx); } };
 var AGprocess = { "`argv`" : process.argv.slice(0,process.argv.length) };
 var ACrequireThunks = {};
 ACrequireThunks.MMfs = function () {
     var LVfs = require('fs');
     return {
-        "`exists`" : function (PV1, PV2) {
-            var LVparse = ACcheckFilePath(PV1.toString().split('/'));
-            if (LVparse.MMrc == 0) {
-                var LVpath = ACfsRoot + "/" + PV1;
-                return LVfs.exists(PV1, PV2);
-            }
-            console.log('invalid pathname: ' + PV1.toString());
-        },
-        "`readFile`" : function (PV1, PV2, PV3) {
-            var LVparse = ACcheckFilePath(PV1.toString().split('/'));
-            if (LVparse.MMrc == 0) {
-                var LVpath = ACfsRoot + "/" + PV1;
-                if (PV3 == undefined) {
-                    return LVfs.readFile(LVpath, PV2);
-                } else {
-                    return LVfs.readFile(LVpath, PV2, PV3);
-                }
-            }
-            console.log('invalid pathname: ' + PV1.toString());
-        },
-        "`writeFile`" : function (PV1, PV2, PV3, PV4) {
-            var LVparse = ACcheckFilePath(PV1.toString().split('/'));
-            if (LVparse.MMrc == 0) {
-                var LVpath = ACfsRoot + "/" + PV1;
-                console.log('writing to ' + LVpath);
-                if (PV4 == undefined) {
-                    return LVfs.writeFile(LVpath, PV2, PV3);
-                } else {
-                    return LVfs.writeFile(LVpath, PV2, PV3, PV4);
-                }
-            }
-            console.log('invalid pathname: ' + PV1.toString());
-        }
-    };
-};
+"`exists`" : function (PV1, PV2) {
+    var LVparse = ACcheckFilePath(PV1);
+    if (LVparse.MMrc) { console.log('invalid pathname: ' + PV1); return; }
+    console.log(ACsource + ' exists ' + PV1);
+    return LVfs.exists(ACfsRoot + "/" + PV1, PV2); },
+"`mkdir`" : function (PV1, PV2) {
+    var LVparse = ACcheckFilePath(PV1);
+    if (LVparse.MMrc) { console.log('invalid pathname: ' + PV1); return; }
+    console.log(ACsource + ' mkdir ' + PV1);
+    return LVfs.mkdir(ACfsRoot + "/" + PV1, PV2); },
+"`readFile`" : function (PV1, PV2, PV3) {
+    var LVparse = ACcheckFilePath(PV1);
+    if (LVparse.MMrc) { console.log('invalid pathname: ' + PV1); return; }
+    console.log(ACsource + ' readFile ' + PV1);
+    if (PV3 == undefined) {
+        return LVfs.readFile(ACfsRoot + "/" + PV1, PV2); }
+    else {
+        return LVfs.readFile(ACfsRoot + "/" + PV1, PV2, PV3); } },
+"`writeFile`" : function (PV1, PV2, PV3, PV4) {
+    var LVparse = ACcheckFilePath(PV1);
+    if (LVparse.MMrc) { console.log('invalid pathname: ' + PV1); return; }
+    console.log(ACsource + ' writeFile ' + PV1);
+    if (PV4 == undefined) {
+        return LVfs.writeFile(ACfsRoot + "/" + PV1, PV2, PV3); }
+    else {
+        return LVfs.writeFile(ACfsRoot + "/" + PV1, PV2, PV3, PV4); } } }; };
 
 var AGArray = {"`isArray`" :
     function (PVx) { return Array.isArray(PVx); } };

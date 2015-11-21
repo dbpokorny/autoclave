@@ -1,6 +1,6 @@
 // construct parsing table
 //
-// 1 The globals listed in GVglobalNameStrings are translated by adding the
+// 1 The globals listed in GVbuiltinStrings are translated by adding the
 //   prefix "AG"
 
 "use strict";
@@ -48,24 +48,24 @@ var AF   = 'AF';   // anonymous function
 var NF   = 'NF';   // named function
 var PL   = 'PL';   // parameter list
 
-// These are the 
-var GVglobalNameStrings = ['console', 'decodeURI', 'decodeURIComponent',
+// 1 Built-in global names to which the prefix "AG" is added
+var GVbuiltinStrings = ['console', 'decodeURI', 'decodeURIComponent',
     'encodeURI', 'encodeURIComponent', 'escape', 'isNaN', 'module', 'process',
     'require', 'undefined', 'unescape', 'Array', 'JSON', 'Math', 'Object',
     'RegExp'];
 
-var GVglobalNames = {};
-GVglobalNameStrings.forEach(function (PVx) { GVglobalNames['#' + PVx] = 1; });
+var GVbuiltins = {};
+GVbuiltinStrings.forEach(function (PVx) { GVbuiltins['#' + PVx] = 1; });
 
 var GVsurrogateNames = {};
-GVglobalNameStrings.forEach(function (PVx) { GVsurrogateNames['AG' + PVx] = 1; });
+GVbuiltinStrings.forEach(function (PVx) { GVsurrogateNames['AG' + PVx] = 1; });
 
 var DCinvalidVarnameError = -10;
 var DCinvalidVarnameErrorMsg = "invalid variable name";
 // Validate a request to define a variable name
 var FFvalidVarname = function FFvalidVarname(PVname) {
     assert(typeof PVname == "string");
-    if (GVglobalNames.hasOwnProperty('#' + PVname)) {
+    if (GVbuiltins.hasOwnProperty('#' + PVname)) {
         return { MMrc : DCinvalidVarnameError, MMmsg :
             DCinvalidVarnameErrorMsg, MMdata : PVname };
     } else {
@@ -75,7 +75,7 @@ var FFvalidVarname = function FFvalidVarname(PVname) {
 
 var FFremapGlobalName = function FFremapGlobalName(PVname) {
     assert(typeof PVname == "string");
-    if (GVglobalNames.hasOwnProperty('#' + PVname)) {
+    if (GVbuiltins.hasOwnProperty('#' + PVname)) {
         return "AG" + PVname;
     } else {
         return PVname;
@@ -1695,26 +1695,9 @@ var FFtestParse2 = function FFtestParse2(PVinput, PVinputData) {
 };
 
 module.exports = {
-    MMrules : GVrules,
     MMword : GVword,
-    MMprintRules : FFprintRules,
-    MMitems : GVitems,
-    MMacceptItem : GVacceptItem,
-    MMitemSymbols : GVitemSymbols,
-    MMitemSets : GVitemSets,
-    MMitemStrings : GVitemStrings,
-    MMacceptIndex : GVacceptIndex,
-    MMitemSetStrings : GVitemSetStrings,
-    MMitemSetIndex : GVitemSetIndex,
-    MMitemSetTrans : GVitemSetTrans,
-    MMisAcceptingState : GVisAcceptingState,
-    MMitemSetReduce : GVitemSetReduce,
-    MMprintItems : FFprintItems,
-    MMtestNextItemSet : FFtestNextItemSet,
-    MMmakeItemSets : FFmakeItemSets,
     MMformatTokenRef : FFformatTokenRef,
     MMtestParse : FFtestParse,
     MMtestParse2 : FFtestParse2,
-    MMglobalNameStrings : GVglobalNameStrings,
-    MMglobalNames : GVglobalNames
+    MMbuiltinStrings : GVbuiltinStrings,
 };

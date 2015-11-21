@@ -34,6 +34,10 @@ $(LOC)/tree.js: tree.js tmpl/header.js
 $(LOC)/acutil.js: acutil.js tree.js tmpl/header.js
 	node tree.js acutil.js
 
+cleanfs:
+	@rm -rf filesys
+	@mkdir filesys
+
 clean:
 	@rm -rf acbuild
 	@mkdir acbuild

@@ -25,11 +25,13 @@ A student may program a bot to...
 
 Since it ordinarily runs on a node.js server, there is no need for the student to
 learn HTML, the DOM, CSS, or any other web technology before diving into
-JavaScript programming.
+JavaScript programming. The term *bot code* refers to content the server receives
+with the intention of compiling it to the sterilized form and executing it inside
+a <a href="https://nodejs.org/api/vm.html">virtual machine context</a>.
 
 ## Specification
 
-JavaScript input code must refrain from using
+Bot code must refrain from using
  - object-oriented features (`new` and `constructor`)
  - exception handling (`throw`, `try`, and `catch`)
  - the slash-delimited regular expression literal syntax (`/[a-zA-Z0-9_]*/`)

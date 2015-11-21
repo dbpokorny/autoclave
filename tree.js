@@ -132,7 +132,7 @@ var FFwalkTree = function FFwalkTree(PVtree) {
     var LVparams = null;
     var LVscopeStack = [['undefined']];
     var LVdefStack = [{}];
-    RRtable.MMglobalNameStrings.forEach(function (PVx) {
+    RRtable.MMbuiltinStrings.forEach(function (PVx) {
         LVdefStack[0]['#AG' + PVx] = 'global';
     });
     var LVtokenRefLinks = {};
