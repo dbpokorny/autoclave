@@ -98,29 +98,23 @@ var AGObject = {"`keys`" :
 
 var ACgetItemB = function ACgetItemB(PVx, PVy) { // x[y]
     if (ACpass.hasOwnProperty("#" + PVy) || (! isNaN(PVy))) {
-        return PVx[PVy];
-    } else {
-        return PVx["`" + PVy.toString() + "`"];
-    }
-};
+        return PVx[PVy]; }
+    else {
+        return PVx["`" + PVy.toString() + "`"]; } };
 var ACgetItemD = function ACgetItemD(PVx, PVy) { // x.y
     if (ACpass.hasOwnProperty("#" + PVy) || (! isNaN(PVy))) {
         var LVx = PVx[PVy];
         if (typeof LVx == "function") {
-            return LVx.bind(PVx);
-        } else {
-            return LVx;
-        }
-    } else {
-        return PVx["`" + PVy.toString() + "`"];
-    }
-};
-var ACsetItemB = function ACsetItemB(PVx, PVy, PVz) { // x[y] = z
+            return LVx.bind(PVx); }
+        else {
+            return LVx; } }
+    else {
+        return PVx["`" + PVy.toString() + "`"]; } };
+var ACgetItemNoPass = function ACgetItemNoPass(PVx, PVy) {
+    if (! isNaN(PVy)) { return PVx[PVy]; } else { return PVx["`" + PVy + "`"]; } };
+var ACsetItem = function ACsetItem(PVx, PVy, PVz) { // x[y] = z or x.y = z
     if (! isNaN(PVy)) { PVx[PVy] = PVz; } else {
-        PVx["`" + PVy.toString() + "`"] = PVz; } };
-var ACsetItemD = function ACsetItemD(PVx, PVy, PVz) { // x.y = z
-    if (! isNaN(PVy)) { PVx[PVy] = PVz; } else {
-        PVx["`" + PVy.toString() + "`"] = PVz; } };
+        PVx["`" + PVy + "`"] = PVz; } };
 var AChasItem = function AChasItem(PVx, PVy) {
     if (ACpass.hasOwnProperty("#" + PVy) || (! isNaN(PVy))) {
         return PVx.hasOwnProperty(PVy);
@@ -198,7 +192,7 @@ var AGJSON = {
         if (PVx instanceof Array) { return PVx.map(sHelper); }
         var LVresult = {};
         AGObject["`keys`"](PVx).forEach(function (PVk) {
-            LVresult[PVk] = sHelper(ACgetItemB(PVx, PVk));
+            LVresult[PVk] = sHelper(ACgetItemNoPass(PVx, PVk));
         });
         return LVresult;
     };
@@ -210,7 +204,7 @@ var AGJSON = {
         if (PVx instanceof Array) { return PVx.map(pHelper); }
         var LVresult = {};
         Object.keys(PVx).forEach(function (PVk) {
-            ACsetItemB(LVresult, PVk, pHelper(PVx[PVk]));
+            ACsetItem(LVresult, PVk, pHelper(PVx[PVk]));
         });
         return LVresult;
     };

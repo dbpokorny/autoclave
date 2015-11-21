@@ -399,9 +399,9 @@ var GVrulesAndReducers = [
         function (PVcx,PVao,PVx) {
             if (PVao == "=" && PVcx instanceof Array) {
                 if (PVcx[0] == "ACgetItemD") {
-                    return ['ACsetItemD','(',PVcx[2],',',PVcx[4],',',PVx,')']; }
+                    return ['ACsetItem','(',PVcx[2],',',PVcx[4],',',PVx,')']; }
                 if (PVcx[0] == "ACgetItemB") {
-                    return ['ACsetItemB','(',PVcx[2],',',PVcx[4],',',PVx,')']; } }
+                    return ['ACsetItem','(',PVcx[2],',',PVcx[4],',',PVx,')']; } }
             return [PVcx,PVao,PVx]; },
         function (PVcx,PVao,PVx) { return [PVcx,PVao,PVx];},
     [AO,'->',['=']],
