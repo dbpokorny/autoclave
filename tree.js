@@ -692,20 +692,15 @@ var FFbatch = function FFbatch(PVurl, PVk) {
             FFbridgeFile(LVjsPath, PVjs);
             FFmakeDirs('filesys/' + LVparse.MMnet + "/" + LVparse.MMuser + "/" +
                 LVparse.MMrepo, function (PVe, PVf) {;});
-            return PVk(null, [LVscopePath, LVhtmlPath, LVjsPath]);
-        });
-    });
-};
+            return PVk(null, [LVscopePath, LVhtmlPath, LVjsPath]); }); }); };
 
 // no return value
 var FFbatchEpilogue = function (PVe, PVfiles) {
+    PVfiles.forEach(function (PVfilename) {
+        console.log("[FFbatchEpilogue] writeFile " + PVfilename); });
     if (PVe) {
         console.log(PVe);
-        console.log("wrote files: " + PVfiles);
-        process.exit(1);
-    }
-    console.log("wrote files: " + PVfiles);
-};
+        process.exit(1); } };
 
 // no return value
 var FFfullMainPath = function FFfullMainPath(PVurl) {
@@ -716,25 +711,17 @@ var FFfullMainPath = function FFfullMainPath(PVurl) {
             if (PVe2) { console.log(PVe2); return; }
             console.log('copy ' + PVurl + ' to ' + LVpath);
             var LVnewUrl = 'git@github.com:__local__/__local__/' + PVurl;
-            FFbatch(LVnewUrl, FFbatchEpilogue);
-        });
-    });
-};
+            FFbatch(LVnewUrl, FFbatchEpilogue); }); }); };
 
 // no return value
 var FFfullMain = function FFfullMain(PVurl) {
     if (PVurl.indexOf('@') != -1) {
-        FFbatch(PVurl, FFbatchEpilogue);
-    }
+        FFbatch(PVurl, FFbatchEpilogue); }
     RRfs.exists(PVurl, function (PVexists) {
         if (PVexists) {
             FFfullMainPath(PVurl);
         } else {
-            FFbatch(PVurl, FFbatchEpilogue);
-        }
-    });
-};
-
+            FFbatch(PVurl, FFbatchEpilogue); } }); };
 
 // Usage: node tree.js git@github.com:user/repo/path/to/file.js
 // Usage: node tree.js file
