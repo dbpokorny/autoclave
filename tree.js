@@ -626,12 +626,12 @@ var FFtreeDraft = function FFtreeDraft(PVurl, PVfilename, PVk) {
 'var ACreqRoot = "' + RRpath.resolve('acbuild/js/cache') + '";\n' +
 'var ACfsRoot = "' + LVfsRoot + '";\n' +
 'var ACdomain = "' + LVdomain + '";\n' +
-'// var ACnet = "' + LVnet + '";\n' +
+'var ACnet = "' + LVnet + '";\n' +
 'var ACuser = "' + LVuser + '";\n' +
 'var ACrepo = "' + LVrepo + '";\n' +
 'var ACfilename = "' + PVfilename + '";\n' +
 'var ACnetworkCode = ' + JSON.stringify(GVnetworkCode) + ';\n' +
-'// var ACnetDomain = ' + JSON.stringify(GVnetDomain) + ';\n');
+'var ACnetDomain = ' + JSON.stringify(GVnetDomain) + ';\n');
         var LVfooter = (
 'if (AGmodule["`exports`"]) {\n' +
 '    module.exports = AGmodule["`exports`"];\n' +

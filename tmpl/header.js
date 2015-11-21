@@ -191,4 +191,29 @@ AGrequire["`main`"]["`id`"] = require.main.id;
 var AGundefined = undefined;
 var AGMath = { "`min`" : Math.min, "`max`" : Math.max };
 var AGisNaN = isNaN;
-var AGJSON = { "`stringify`" : JSON.stringify, "`parse`" : JSON.parse};
+var AGJSON = {
+"`stringify`" : function ACstringify (PVinput) {
+    var sHelper = function sHelper (PVx) {
+        if ( (! isNaN(PVx)) || (typeof PVx == "string") ) { return PVx; }
+        if (PVx instanceof Array) { return PVx.map(sHelper); }
+        var LVresult = {};
+        AGObject["`keys`"](PVx).forEach(function (PVk) {
+            LVresult[PVk] = sHelper(ACgetItemB(PVx, PVk));
+        });
+        return LVresult;
+    };
+    return JSON.stringify(sHelper(PVinput));
+},
+"`parse`" : function ACparse (PVinput) {
+    var pHelper = function pHelper(PVx) {
+        if ( (! isNaN(PVx)) || (typeof PVx == "string") ) { return PVx; }
+        if (PVx instanceof Array) { return PVx.map(pHelper); }
+        var LVresult = {};
+        Object.keys(PVx).forEach(function (PVk) {
+            ACsetItemB(LVresult, PVk, pHelper(PVx[PVk]));
+        });
+        return LVresult;
+    };
+    return pHelper(JSON.parse(PVinput));
+}};
+
